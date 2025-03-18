@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.util.*;
 
 import dpannc.Vector;
+import dpannc.Noise;
 import dpannc.database.DB;
 
 public class AIMN {
@@ -128,7 +129,7 @@ public class AIMN {
     
             public void addNoise() {
                 if (level >= K) {
-                    noisyCount = count + (int) dpannc.TLap.generate(sensitivity, epsilon / adjSen, delta / adjSen);
+                    noisyCount = count + (int) Noise.TLap(sensitivity, epsilon / adjSen, delta / adjSen);
                     if (noisyCount <= threshold) {
                         noisyCount = 0;
                     }
