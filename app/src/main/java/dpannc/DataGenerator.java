@@ -2,15 +2,34 @@ package dpannc;
 
 import java.io.FileWriter;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Random;
 
 public class DataGenerator {
     static Random rand = new Random();
     public static void main(String[] args) {
-        Vector v = new Vector(new double[] {1.0, 0.0, 0.0}).normalize();
-        double distance = 0.7f;
-        Vector generated = DataGenerator.generateNormalisedVectorAtDistance(v, distance);
-        System.out.println(generated.distance(v));
+        // Vector v = new Vector(new double[] {1.0, 0.0, 0.0}).normalize();
+        // double distance = 0.7f;
+        // Vector generated = DataGenerator.generateNormalisedVectorAtDistance(v, distance);
+        // System.out.println(generated.distance(v));
+        int d = 4;
+        int n = 100;
+        Path filePath = Paths.get("resources", "generated", d + "D_" + n + ".txt");
+        generateRandom(filePath, d, n);
+    }
+
+    public static void generateRandom(Path filePath, int d, int amount) {
+        int count = 0;
+        try (FileWriter writer = new FileWriter(filePath.toAbsolutePath().toString());) {
+            while (count < amount) {
+                Vector v = new Vector(d).randomGaussian().setLabel("" + count);
+                writer.write(v.toString() + "\n");
+                count++;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        System.out.println("generated");
     }
 
     public static int generateFile(Path filePath, Vector v, int amount, double[] dists) {
