@@ -97,11 +97,16 @@ class HYTest {
         assertNotNull(root, "root cell is null");
         assertEquals(7, root.count, "initial count not correct");
         // Box left = root.outer;
-        Box shrunkBox = root.shrink(0, 0.01);
-        // assertEquals(4, left.count);
-        assertEquals(3, shrunkBox.count);
+        Box[] shrinkResult = root.shrink(0, 0.01);
+        assertNotNull(shrinkResult[0], "outer should not be null");
+        assertNotNull(shrinkResult[1], "inner should not be null");
 
-        assertNotNull(shrunkBox, "Right child should exist after shrinking");
+        Box outer = shrinkResult[0];
+        Box inner = shrinkResult[1];
+        assertEquals(4, outer.count);
+        assertEquals(3, inner.count);
+
+        
     }
 }
 

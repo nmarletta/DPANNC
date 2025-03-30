@@ -19,8 +19,8 @@ public class Runner {
     static int SEED = 123;
 
     public static void main(String[] args) throws Exception {
-        // exp();
-        NashDevice nd = new NashDevice(300, 200, 1);
+        exp();
+        // NashDevice nd = new NashDevice(300, 200, 1);
     }
 
     private static int getDistsCount(double min, double max, Vector q, List<Vector> vectors) {
@@ -37,8 +37,8 @@ public class Runner {
 
     public static void exp() throws Exception {
         double sensitivity = 1.0;
-        double epsilon = 2.0;
-        double delta = 0.0001;
+        double epsilon = 0.4;
+        double delta = 0.2;
         AIMN ds = new AIMN(sensitivity, epsilon, delta);
 
         int d = 2;
@@ -50,7 +50,7 @@ public class Runner {
         // Vector testq = new
         // Vector(d).setLabel("test").randomGaussian(SEED).normalize();
         // int n = DataGenerator.generateFile(filePath, testq, 20, dists);
-        int n = 400000;
+        int n = 4000;
         ds.updateParameters(n, d, c, epsilon, delta);
         ds.populate(n, d, filePath);
         Brute bf = new Brute(n, d, c);

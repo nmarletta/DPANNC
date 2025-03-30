@@ -182,7 +182,6 @@ public class AIMN {
             this.d = d;
     
             try (BufferedReader reader = new BufferedReader(new FileReader(filePath.toAbsolutePath().toString()))) {
-    
                 String line;
                 int counter = 0;
                 while ((line = reader.readLine()) != null && counter < n) {
