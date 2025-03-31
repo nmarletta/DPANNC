@@ -31,16 +31,20 @@ public class HY {
         ctrl = 0;
     }
 
+    public int query(Vector q, double alpha, double Diameter) {
+        return root.query(q, alpha, Diameter);
+    }
+
     public void populate(int n, int d, Path filepath) {
         Collection<Vector> dataset = loadfile(n, filepath);
         this.d = d;
         this.n = n;
         nt = n + (4 / epsilon) * log(2 / beta, 10) + Noise.Lap(4 / epsilon);
         H = log(nt, 10);
-        System.out.println("n: " + n + ", d: " + d + ", nt: " + nt + ", H: " + H);
+        // System.out.println("n: " + n + ", d: " + d + ", nt: " + nt + ", H: " + H);
         Box b = new Box(d, dataset);
         root = new Cell(b);
-        root.shrink(0, beta);
+        root.recShrink(0, beta);
     }
 
     public static void main(String[] args) {
@@ -74,7 +78,7 @@ public class HY {
         Box inner;
         Box outer;
         int count;
-
+        boolean isLeaf;
         Cell left;
         Cell right;
 
@@ -98,6 +102,24 @@ public class HY {
 
         public int count() {
             return count;
+        }
+
+        public boolean isLeaf() {
+            return isLeaf;
+        }
+
+        public int query(Vector q, double alpha, double radius) {
+            if (!outer.intersectsBall(q, radius - alpha * radius * 2))
+                return 0;
+            if (outer.isSubsetOfBall(q, radius - alpha * radius * 2))
+                return count;
+            if (isLeaf)
+                return 0;
+
+            int result = 0;
+            if (left != null) result += left.query(q, alpha, radius);
+            if (right != null) result += right.query(q, alpha, radius);
+            return result;
         }
 
         public void recShrink(int h, double beta) {
@@ -158,8 +180,8 @@ public class HY {
                     newOuter.addData(bl.data);
                 }
 
+                // if there's ALREADY an inner box && bc is shrunk into the same size as inner
                 if (inner != null && bc.equals(inner)) {
-                    // if there's ALREADY an inner box && bc is shrunk into the same size as inner
                     return new Box[] { outer, null }; // leaf
                 }
             }

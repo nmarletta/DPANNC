@@ -62,11 +62,10 @@ public class Vector {
     /**
      * Populates the vector with random values sampled from a Gaussian distribution.
      *
-     * @param SEED 
+     * @param random the random object
      * @return the updated vector with random Gaussian values.
      */
-    public Vector randomGaussian(int SEED) {
-        Random random = new Random(SEED);
+    public Vector randomGaussian(Random random) {
         for (int c = 0; c < components.length; c++) {
             this.components[c] = random.nextGaussian();
         }
@@ -75,14 +74,15 @@ public class Vector {
     }
 
     /**
-     * Populates the vector with random values sampled from a Gaussian distribution.
+     * Populates the vector with random values uniformly distributed within some range.
      *
+     * @param random the random object
+     * @param range the range each component can be
      * @return the updated vector with random Gaussian values.
      */
-    public Vector randomGaussian() {
-        Random random = new Random();
+    public Vector random(Random random, double range) {
         for (int c = 0; c < components.length; c++) {
-            this.components[c] = random.nextGaussian();
+            this.components[c] = random.nextDouble() * range - (range/2);
         }
         this.nextEmpty = components.length;
         return this;
@@ -115,7 +115,7 @@ public class Vector {
      * @param c the index of the component to retrieve.
      * @return the value of the specified component.
      */
-    public double getC(int c) {
+    public double get(int c) {
         return components[c];
     }
 
@@ -176,7 +176,7 @@ public class Vector {
      */
     public Vector add(Vector v) {
         for (int c = 0; c < components.length; c++) {
-            this.components[c] += v.getC(c);
+            this.components[c] += v.get(c);
         }
         return this;
     }
@@ -189,7 +189,7 @@ public class Vector {
      */
     public Vector subtract(Vector v) {
         for (int c = 0; c < components.length; c++) {
-            this.components[c] -= v.getC(c);
+            this.components[c] -= v.get(c);
         }
         return this;
     }
@@ -215,7 +215,7 @@ public class Vector {
      */
     public Vector divide(Vector v) {
         for (int c = 0; c < components.length; c++) {
-            this.components[c] /= v.getC(c);
+            this.components[c] /= v.get(c);
         }
         return this;
     }
@@ -247,7 +247,7 @@ public class Vector {
         }
         double product = 0.0f;
         for (int c = 0; c < components.length; c++) {
-            product += this.components[c] * v.getC(c);
+            product += this.components[c] * v.get(c);
         }
         return product;
     }
@@ -268,7 +268,7 @@ public class Vector {
 
         double sum = 0.0;
         for (int c = 0; c < components.length; c++) {
-            double diff = components[c] - v.getC(c);
+            double diff = components[c] - v.get(c);
             sum += diff * diff;
         }
 

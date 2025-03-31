@@ -111,5 +111,74 @@ class BoxTest {
         assertEquals(0.5, modifiedBox.min[0]);
         assertEquals(7.5, modifiedBox.max[0]);
     }
+
+    @Test
+    void testIntersectsBall() {
+        Vector q;
+        double r;
+
+        // intersection along side
+        q = new Vector(new double[] {-10.5, 0});
+        r = 2;
+        assertTrue(box.intersectsBall(q, r), "wrong indication of intersection along side (false - should be true)");
+
+        // no intersection along side
+        q = new Vector(new double[] {-11.2, 0});
+        r = 2;
+        assertFalse(box.intersectsBall(q, r), "wrong indication of intersection along side (true - should be false)");
+
+        // intersection on corner
+        q = new Vector(new double[] {-11, 10});
+        r = 2;
+        assertTrue(box.intersectsBall(q, r), "wrong indication of intersection on corner (false - should be true)");
+
+        // no intersection on corner
+        q = new Vector(new double[] {-12, 1});
+        r = 2;
+        assertFalse(box.intersectsBall(q, r), "wrong indication of intersection on corner (true - should be false)");
+
+        // ball enclosed in box
+        q = new Vector(new double[] {2, 1});
+        r = 2;
+        assertTrue(box.intersectsBall(q, r), "wrong indication of intersection, ball enclosed in box (false - should be true)");
+
+        // box enclosed in ball
+        q = new Vector(new double[] {2, 1});
+        r = 30;
+        assertTrue(box.intersectsBall(q, r), "wrong indication of intersection, box enclosed in ball (false - should be true)");
+
+    }
+
+    @Test
+    void testIsSubsetOfBall() {
+        Vector q;
+        double r;
+
+        // intersection along side
+        q = new Vector(new double[] {-10.5, 0});
+        r = 2;
+        assertFalse(box.isSubsetOfBall(q, r), "intersects along side - should be false");
+
+        // no intersection
+        q = new Vector(new double[] {-11.2, 0});
+        r = 2;
+        assertFalse(box.isSubsetOfBall(q, r), "no intersection - should be false");
+
+        // intersection on corner
+        q = new Vector(new double[] {-11, 10});
+        r = 2;
+        assertFalse(box.isSubsetOfBall(q, r), "intersects on corner - should be false");
+
+        // ball enclosed in box
+        q = new Vector(new double[] {2, 1});
+        r = 2;
+        assertFalse(box.isSubsetOfBall(q, r), "ball enclosed in box - should be false");
+
+        // box enclosed in ball
+        q = new Vector(new double[] {2, 1});
+        r = 30;
+        assertTrue(box.isSubsetOfBall(q, r), "box enclosed in ball - should be true");
+
+    }
 }
 

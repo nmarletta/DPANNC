@@ -15,21 +15,67 @@ public class DataGenerator {
         int d = 4;
         int n = 100;
         Path filePath = Paths.get("resources", "generated", d + "D_" + n + ".txt");
-        generateRandom(filePath, d, n);
+        generateRandom(filePath, d, n, 10);
     }
 
-    public static void generateRandom(Path filePath, int d, int amount) {
+    public static void generateRandomGaussian(Path filePath, int d, int amount) {
+        Random random = new Random();
         int count = 0;
         try (FileWriter writer = new FileWriter(filePath.toAbsolutePath().toString());) {
             while (count < amount) {
-                Vector v = new Vector(d).randomGaussian().setLabel("" + count);
+                Vector v = new Vector(d).randomGaussian(random).setLabel("" + count);
                 writer.write(v.toString() + "\n");
                 count++;
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        System.out.println("generated");
+        System.out.println("Vectors generated...");
+    }
+
+    public static void generateRandomGaussian(Path filePath, int d, int amount, int SEED) {
+        Random random = new Random(SEED);
+        int count = 0;
+        try (FileWriter writer = new FileWriter(filePath.toAbsolutePath().toString());) {
+            while (count < amount) {
+                Vector v = new Vector(d).randomGaussian(random).setLabel("" + count);
+                writer.write(v.toString() + "\n");
+                count++;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        System.out.println("Vectors generated...");
+    }
+
+    public static void generateRandom(Path filePath, int d, int amount, double range) {
+        Random random = new Random();
+        int count = 0;
+        try (FileWriter writer = new FileWriter(filePath.toAbsolutePath().toString());) {
+            while (count < amount) {
+                Vector v = new Vector(d).random(random, range).setLabel("" + count);
+                writer.write(v.toString() + "\n");
+                count++;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        System.out.println("Vectors generated...");
+    }
+
+    public static void generateRandom(Path filePath, int d, int amount, double range, int SEED) {
+        Random random = new Random(SEED);
+        int count = 0;
+        try (FileWriter writer = new FileWriter(filePath.toAbsolutePath().toString());) {
+            while (count < amount) {
+                Vector v = new Vector(d).random(random, range).setLabel("" + count);
+                writer.write(v.toString() + "\n");
+                count++;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        System.out.println("Vectors generated...");
     }
 
     public static int generateFile(Path filePath, Vector v, int amount, double[] dists) {
@@ -161,7 +207,7 @@ public class DataGenerator {
 
     private static Vector randomPerpendicularVector(Vector p) {
         int n = p.getDimensions();
-        Vector randomVec = new Vector(n).randomGaussian().normalize(); // Random unit vector
+        Vector randomVec = new Vector(n).randomGaussian(new Random()).normalize(); // Random unit vector
     
         // Compute projection onto p
         double dot = p.dot(randomVec);
@@ -180,9 +226,9 @@ public class DataGenerator {
     
         // Pick an index i where p[i] is nonzero, swap two coordinates
         for (int i = 0; i < n - 1; i++) {
-            if (p.getC(i) != 0) {
-                perpVec.get()[i] = -p.getC(i + 1);
-                perpVec.get()[i + 1] = p.getC(i);
+            if (p.get(i) != 0) {
+                perpVec.get()[i] = -p.get(i + 1);
+                perpVec.get()[i + 1] = p.get(i);
                 break;
             }
         }
@@ -198,8 +244,8 @@ public class DataGenerator {
         }
         
         // Find a perpendicular vector
-        double x = p.getC(0);
-        double y = p.getC(1);
+        double x = p.get(0);
+        double y = p.get(1);
         
         // Perpendicular vectors: (-y, x) or (y, -x)
         Vector tangent = new Vector(new double[]{-y, x});

@@ -21,7 +21,8 @@ public class AIMN {
         double c, lambda, r, K, alpha, beta, adjSen, threshold, etaU, etaQ;
         Node root;
         boolean saveData;
-
+        Random random = new Random(100);
+    
         boolean usePredeterminedNodes = false;
         Map<String, Vector> nodes;
 
@@ -67,9 +68,9 @@ public class AIMN {
                 this.noisyCount = 0;
                 this.id = id;
                 if (usePredeterminedNodes) {
-                    g = nodes.getOrDefault(id, new Vector(T).randomGaussian());
+                    g = nodes.getOrDefault(id, new Vector(T).randomGaussian(random));
                 } else {
-                    g = new Vector(T).randomGaussian();
+                    g = new Vector(T).randomGaussian(random);
                 }
                 childNodes = new ArrayList<>();
             }

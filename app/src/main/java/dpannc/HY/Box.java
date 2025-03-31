@@ -48,14 +48,14 @@ public class Box {
 
         Vector first = dataset.iterator().next();
         for (int i = 0; i < d; i++) {
-            min[i] = first.getC(i);
-            max[i] = first.getC(i);
+            min[i] = first.get(i);
+            max[i] = first.get(i);
         }
 
         for (Vector v : dataset) {
             for (int i = 0; i < v.getDimensions(); i++) {
-                min[i] = Math.min(min[i], v.getC(i));
-                max[i] = Math.max(max[i], v.getC(i));
+                min[i] = Math.min(min[i], v.get(i));
+                max[i] = Math.max(max[i], v.get(i));
             }
         }
 
@@ -84,7 +84,7 @@ public class Box {
         Box rightBox = this.emptyClone().setMin(splitIndex, splitValue).setSize();
 
         for (Vector v : data) {
-            if (v.getC(splitIndex) <= splitValue) {
+            if (v.get(splitIndex) <= splitValue) {
                 leftBox.addPoint(v);
             } else {
                 rightBox.addPoint(v);
@@ -95,6 +95,55 @@ public class Box {
         rightBox.count = rightBox.data.size();
 
         return new Box[] { leftBox, rightBox };
+    }
+
+    // public boolean intersectsInnerRange(Vector q, double alpha, double diameter) {
+    //     double distance = distanceFromPointToBox(q);
+    //     return distance < (diameter/2);
+    // }
+    
+    // public boolean isSubsetOfOuterRange(Vector q, double alpha, double diameter) {
+    //     double distance = distanceFromPointToBox(q);
+    //     return distance <= (1 + alpha) * (diameter/2);
+    // }
+    
+    public boolean intersectsBall(Vector q, double radius) {
+        double distSquared = 0.0;
+
+        for (int i = 0; i < d; i++) {
+            double c = q.get(i);
+            double closest;
+
+            if (c < min[i]) {
+                closest = min[i];
+            } else if (c > max[i]) {
+                closest = max[i];
+            } else {
+                closest = c;
+            }
+
+            double delta = c - closest;
+            distSquared += delta * delta;
+        }
+        return distSquared <= radius * radius;
+    }
+
+    public boolean isSubsetOfBall(Vector q, double radius) {
+        double radiusSquared = radius * radius;
+        int numCorners = 1 << d;  // 2^d corners in d-dimensional space
+    
+        for (int mask = 0; mask < numCorners; mask++) {
+            double distSquared = 0.0;
+            for (int i = 0; i < d; i++) {
+                double cornerCoord = ((mask & (1 << i)) == 0) ? min[i] : max[i];
+                double delta = cornerCoord - q.get(i);
+                distSquared += delta * delta;
+            }
+            if (distSquared > radiusSquared) {
+                return false;  // at least one corner is outside the ball
+            }
+        }
+        return true; 
     }
 
     public void addPoint(Vector v) {

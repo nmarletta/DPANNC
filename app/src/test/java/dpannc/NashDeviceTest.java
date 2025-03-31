@@ -4,11 +4,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.Random;
+
 class NashDeviceTest {
     private int d = 3;
     private int dPrime = 2;
     private double sigma = 1.0;
     private NashDevice device;
+    private Random random = new Random(100);
 
     @BeforeEach
     void setUp() {
@@ -25,21 +28,21 @@ class NashDeviceTest {
 
     @Test
     void testTransformOutputDimension() {
-        Vector input = new Vector(d).randomGaussian().normalize();
+        Vector input = new Vector(d).randomGaussian(random).normalize();
         Vector output = device.transform(input);
         assertEquals(dPrime, output.getDimensions(), "Transformed vector should have dimension dPrime");
     }
 
     @Test
     void testTransformPreservesLabel() {
-        Vector input = new Vector(d).randomGaussian().normalize().setLabel("word");
+        Vector input = new Vector(d).randomGaussian(random).normalize().setLabel("word");
         Vector output = device.transform(input);
         assertEquals("word", output.getLabel(), "Transformed vector should preserve the label");
     }
 
     @Test
     void testTransformReasonableMagnitude() {
-        Vector input = new Vector(d).randomGaussian().normalize();
+        Vector input = new Vector(d).randomGaussian(random).normalize();
         Vector output = device.transform(input);
 
         double magnitude = Math.sqrt(output.dot(output));

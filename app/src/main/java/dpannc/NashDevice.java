@@ -8,6 +8,7 @@ public class NashDevice {
     int dPrime; // target lower dimension
     double sigma; // scaling parameter
     List<Vector> randomGaussians; // list of random Gaussian vectors
+    Random random = new Random();
 
     public NashDevice(int d, int dPrime, double sigma) {
         this.dPrime = dPrime;
@@ -16,7 +17,7 @@ public class NashDevice {
 
         // generate dPrime random Gaussian vectors in d-dimensional space
         for (int i = 0; i < Math.ceil((0.0 + dPrime) / 2); i++) {
-            randomGaussians.add(new Vector(d).randomGaussian());
+            randomGaussians.add(new Vector(d).randomGaussian(random));
         }
     }
 
@@ -50,15 +51,16 @@ public class NashDevice {
         String fileName = "NashDeviceExperiment.txt";
 
         NashDevice nd = new NashDevice(d, dPrime, sigma);
+        Random rnd = new Random();
 
         // Reference vector v
-        Vector v = new Vector(d).randomGaussian();
+        Vector v = new Vector(d).randomGaussian(rnd);
         Vector w = nd.transform(v);
 
         // Generate original vectors
         List<Vector> originalVectors = new ArrayList<>();
         for (int i = 0; i < n; i++) {
-            Vector x = new Vector(d).randomGaussian().normalize().setLabel("x" + i);
+            Vector x = new Vector(d).randomGaussian(rnd).normalize().setLabel("x" + i);
             originalVectors.add(x);
         }
 
