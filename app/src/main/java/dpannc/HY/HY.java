@@ -93,7 +93,7 @@ public class HY {
             left = right = null;
             outer = outerBox;
             inner = innerBox;
-            count = outer.count - inner.count;
+            count = outer.count;
         }
 
         public double size() {
