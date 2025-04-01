@@ -6,8 +6,8 @@ import java.nio.file.Paths;
 import java.util.Random;
 
 public class DataGenerator {
-    static Random rand = new Random();
     public static void main(String[] args) {
+        Random random = new Random(100);
         // Vector v = new Vector(new double[] {1.0, 0.0, 0.0}).normalize();
         // double distance = 0.7f;
         // Vector generated = DataGenerator.generateNormalisedVectorAtDistance(v, distance);
@@ -15,11 +15,10 @@ public class DataGenerator {
         int d = 4;
         int n = 100;
         Path filePath = Paths.get("resources", "generated", d + "D_" + n + ".txt");
-        generateRandom(filePath, d, n, 10);
+        generateRandom(filePath, d, n, 10, random);
     }
 
-    public static void generateRandomGaussian(Path filePath, int d, int amount) {
-        Random random = new Random();
+    public static void generateRandomGaussian(Path filePath, int d, int amount, Random random) {
         int count = 0;
         try (FileWriter writer = new FileWriter(filePath.toAbsolutePath().toString());) {
             while (count < amount) {
@@ -33,38 +32,7 @@ public class DataGenerator {
         System.out.println("Vectors generated...");
     }
 
-    public static void generateRandomGaussian(Path filePath, int d, int amount, int SEED) {
-        Random random = new Random(SEED);
-        int count = 0;
-        try (FileWriter writer = new FileWriter(filePath.toAbsolutePath().toString());) {
-            while (count < amount) {
-                Vector v = new Vector(d).randomGaussian(random).setLabel("" + count);
-                writer.write(v.toString() + "\n");
-                count++;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        System.out.println("Vectors generated...");
-    }
-
-    public static void generateRandom(Path filePath, int d, int amount, double range) {
-        Random random = new Random();
-        int count = 0;
-        try (FileWriter writer = new FileWriter(filePath.toAbsolutePath().toString());) {
-            while (count < amount) {
-                Vector v = new Vector(d).random(random, range).setLabel("" + count);
-                writer.write(v.toString() + "\n");
-                count++;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        System.out.println("Vectors generated...");
-    }
-
-    public static void generateRandom(Path filePath, int d, int amount, double range, int SEED) {
-        Random random = new Random(SEED);
+    public static void generateRandom(Path filePath, int d, int amount, double range, Random random) {
         int count = 0;
         try (FileWriter writer = new FileWriter(filePath.toAbsolutePath().toString());) {
             while (count < amount) {

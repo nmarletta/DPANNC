@@ -19,8 +19,9 @@ public class HY {
     private double H; // max height of tree
     private double beta; // failure probability
     private double nt;
-    private double ctrl; // multiplier for noise used for partitioning (set to 0 in testing)
 
+    private boolean DP = true; // differential privacy
+    private Noise noise = new Noise(10);
     private Cell root;
 
     public HY(double sensitivity, double epsilon, double delta) {
@@ -28,7 +29,6 @@ public class HY {
         this.epsilon = epsilon;
         this.delta = delta;
         beta = 0.01;
-        ctrl = 0;
     }
 
     public int query(Vector q, double alpha, double Diameter) {
@@ -39,12 +39,12 @@ public class HY {
         Collection<Vector> dataset = loadfile(n, filepath);
         this.d = d;
         this.n = n;
-        nt = n + (4 / epsilon) * log(2 / beta, 10) + Noise.Lap(4 / epsilon);
+        nt = DP ? n + (4 / epsilon) * log(2 / beta, 10) + noise.Lap(4 / epsilon) : n; // ONLY NOISE OR ALSO THE OTHER THINGS??? 
         H = log(nt, 10);
-        // System.out.println("n: " + n + ", d: " + d + ", nt: " + nt + ", H: " + H);
         Box b = new Box(d, dataset);
         root = new Cell(b);
         root.recShrink(0, beta);
+        System.out.println("Data structure complete...");
     }
 
     public static void main(String[] args) {
@@ -60,7 +60,6 @@ public class HY {
         Box rootBox = new Box(2, dataset);
         // System.out.println("root size: " + rootBox.size);
         HY tree = new HY(1.0, 0.5, 0.01);
-        tree.setNoiseCtrl(0);
         HY.Cell root = tree.new Cell(rootBox);
         double eh = Math.pow(3.0 / 4.0, tree.H - 0) * tree.epsilon / 100;
         Box[] result = root.shrink(0, 0.01);
@@ -87,6 +86,7 @@ public class HY {
             outer = box;
             inner = null;
             count = box.count;
+            size = box.size;
         }
 
         public Cell(Box outerBox, Box innerBox) {
@@ -94,6 +94,7 @@ public class HY {
             outer = outerBox;
             inner = innerBox;
             count = outer.count;
+            size = outer.size;
         }
 
         public double size() {
@@ -160,13 +161,15 @@ public class HY {
 
         public Box[] shrink(int h, double beta) {
             double eh = Math.pow(3.0 / 4.0, H - h) * epsilon / 100;
-            double R = count + (Noise.Lap(1 / eh) * ctrl);
+            double R = DP ? count + noise.Lap(1 / eh) : count;
             if (R < 370 * (log((2 * nt * d) / (beta * delta), 10) + log(log(u, 10), 10)) / eh) {
                 return null;
             }
-            double T = (2.0 / 3.0) * count + (Noise.Lap(1 / eh) * ctrl);
+
+            double T = DP ? (2.0 / 3.0) * count + noise.Lap(1 / eh) : (2.0 / 3.0) * count;
             Box bl = null, br = null, bc = outer, newOuter = outer.emptyClone();
-            while (bc.count + (Noise.Lap(1.0 / eh) * ctrl) >= T && bc.size > 1.0) {
+
+            while (getNoisyCount(bc, DP, 1/eh) >= T && bc.size > 1.0) {
                 Box[] split = bc.split();
                 bl = split[0];
                 br = split[1];
@@ -187,7 +190,7 @@ public class HY {
             }
 
             if (bl != null && br != null) {
-                bc = bl.count + (Noise.Lap(1 / eh) * ctrl) > br.count + (Noise.Lap(1 / eh) * ctrl) ? bl : br;
+                bc = getNoisyCount(bl, DP, 1/eh) > getNoisyCount(br, DP, 1/eh) ? bl : br;
             }
 
             return new Box[] { newOuter, bc };
@@ -211,8 +214,9 @@ public class HY {
         return Math.log(N);
     }
 
-    public void setNoiseCtrl(double val) {
-        ctrl = val;
+
+    private double getNoisyCount(Box b, boolean DP, double val) {
+        return DP ? b.count + noise.Lap(val) : b.count;
     }
 
     public Collection<Vector> loadfile(int n, Path filepath) {
@@ -230,7 +234,7 @@ public class HY {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println("Insertion complete.");
+        System.out.println("Vectors loaded...");
         return data;
     }
 }
