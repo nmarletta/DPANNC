@@ -4,7 +4,6 @@ import java.nio.file.*;
 import java.util.List;
 import java.util.Random;
 
-import dpannc.DataGenerator;
 import dpannc.NashDevice;
 import dpannc.AIMN.AIMN;
 import dpannc.HY.HY;

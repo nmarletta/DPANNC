@@ -52,7 +52,7 @@ public class Vector {
      *
      * @return the number of dimensions.
      */
-    public int getDimensions() {
+    public int dimensionality() {
         return components.length;
     }
 
@@ -225,7 +225,7 @@ public class Vector {
      *                                  dimension.
      */
     public double dot(Vector v) {
-        if (this.getDimensions() != v.getDimensions()) {
+        if (this.dimensionality() != v.dimensionality()) {
             throw new IllegalArgumentException("Vectors must have the same dimension for dot product. Vectors: " + this.label + " and " + v.getLabel());
         }
         double product = 0.0f;
@@ -244,7 +244,7 @@ public class Vector {
      *                                  dimension.
      */
     public double distance(Vector v) {
-        if (this.getDimensions() != v.getDimensions()) {
+        if (this.dimensionality() != v.dimensionality()) {
             throw new IllegalArgumentException(
                     "Vectors must have the same dimension for Euclidean distance calculation");
         }
@@ -291,6 +291,43 @@ public class Vector {
     //     Vector vector = (Vector) obj;
     //     return label != null ? label.equals(vector.label) : vector.label == null;
     // }
+
+
+
+    // https://extremelearning.com.au/how-to-generate-uniformly-random-points-on-n-spheres-and-n-balls/
+    public Vector sampleOnSphere(double r, Random random) {
+        int d = this.dimensionality();
+        double R = this.magnitude(); // Radius of the original sphere
+        double maxR = 2 * R;
+    
+        if (r < 0 || r > maxR)
+            throw new IllegalArgumentException("r must be in [0, " + maxR + "]");
+    
+        double theta = 2 * Math.asin(r / (2 * R));
+    
+        // Step 1: Normalize input vector to get direction
+        Vector vUnit = this.clone().divide(R);  // Normalize this vector to unit length
+    
+        // Step 2: Sample a random vector z ~ N(0, I)
+        Vector z = new Vector(d).randomGaussian(random);
+    
+        // Step 3: Project z orthogonal to vUnit: w = z - (z·v)v
+        Vector projection = vUnit.clone().multiply(z.dot(vUnit));
+        Vector w = z.clone().subtract(projection);
+        w.normalize();
+    
+        // Step 4: Rotate around sphere
+        Vector vPart = vUnit.clone().multiply(Math.cos(theta));
+        Vector wPart = w.clone().multiply(Math.sin(theta));
+        Vector result = vPart.add(wPart);
+    
+        // Step 5: Scale back to original radius
+        return result.multiply(R);
+    }
+
+    public Vector sampleInSpace(double r, Random random) {
+        return new Vector(this.dimensionality()).randomGaussian(random).setMagnitude(r).add(this);
+    }
 
     /**
      * Returns a string representation of the vector.

@@ -15,7 +15,7 @@ class NashDeviceTest {
 
     @BeforeEach
     void setUp() {
-        device = new NashDevice(d, dPrime, sigma);
+        device = new NashDevice(d, dPrime, sigma, random);
     }
 
     @Test
@@ -30,7 +30,7 @@ class NashDeviceTest {
     void testTransformOutputDimension() {
         Vector input = new Vector(d).randomGaussian(random).normalize();
         Vector output = device.transform(input);
-        assertEquals(dPrime, output.getDimensions(), "Transformed vector should have dimension dPrime");
+        assertEquals(dPrime, output.dimensionality(), "Transformed vector should have dimension dPrime");
     }
 
     @Test
@@ -59,7 +59,7 @@ class NashDeviceTest {
         Vector output = device.transform(input);
 
         assertNotNull(output, "Transformed vector should not be null");
-        assertEquals(dPrime, output.getDimensions(), "Transformed vector should have correct size");
+        assertEquals(dPrime, output.dimensionality(), "Transformed vector should have correct size");
     }
 }
 
