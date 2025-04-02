@@ -5,7 +5,6 @@ import java.util.Random;
 public class Vector {
     private String label;
     private double[] components;
-    private int nextEmpty;
 
     /**
      * Constructs a vector with the given components.
@@ -14,7 +13,6 @@ public class Vector {
      */
     public Vector(double[] v) {
         this.components = v.clone();
-        this.nextEmpty = components.length;
     }
 
     /**
@@ -24,7 +22,6 @@ public class Vector {
      */
     public Vector(int d) {
         this.components = new double[d];
-        this.nextEmpty = 0;
     }
 
     /**
@@ -69,7 +66,6 @@ public class Vector {
         for (int c = 0; c < components.length; c++) {
             this.components[c] = random.nextGaussian();
         }
-        this.nextEmpty = components.length;
         return this;
     }
 
@@ -84,20 +80,7 @@ public class Vector {
         for (int c = 0; c < components.length; c++) {
             this.components[c] = random.nextDouble() * range - (range/2);
         }
-        this.nextEmpty = components.length;
         return this;
-    }
-
-    /**
-     * Assigns a value to the next empty component.
-     *
-     */
-    public void setNext(double value) {
-        if (nextEmpty >= getDimensions()) {
-            System.out.println("error: " + value);
-        }
-        components[nextEmpty] = value;
-        nextEmpty += 1;
     }
 
     /**
@@ -290,18 +273,7 @@ public class Vector {
      * @return a copy of the vector with identical components.
      */
     public Vector clone() {
-        return new Vector(components);
-    }
-
-    /**
-     * Returns a clone of this vector.
-     *
-     * @return the updated vector.
-     */
-    public Vector clear() {
-        components = new double[components.length];
-        nextEmpty = 0;
-        return this;
+        return new Vector(components.clone());
     }
 
     // @Override

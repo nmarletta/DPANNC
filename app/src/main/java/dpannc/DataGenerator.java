@@ -64,75 +64,75 @@ public class DataGenerator {
         return count;
     }
 
-    public static Vector generateVectorAtDistance(Vector v, double distance) {
-        Random rand = new Random();
-        Vector perturbation = new Vector(v.getDimensions());
+    // public static Vector generateVectorAtDistance(Vector v, double distance) {
+    //     Random rand = new Random();
+    //     Vector perturbation = new Vector(v.getDimensions());
 
-        // Generate random perturbation using Gaussian distribution
-        for (int i = 0; i < v.getDimensions(); i++) {
-            perturbation.setNext((double) rand.nextGaussian());
-        }
+    //     // Generate random perturbation using Gaussian distribution
+    //     for (int i = 0; i < v.getDimensions(); i++) {
+    //         perturbation.setNext((double) rand.nextGaussian());
+    //     }
 
-        // Normalize the perturbation to unit length
-        perturbation = perturbation.normalize();
+    //     // Normalize the perturbation to unit length
+    //     perturbation = perturbation.normalize();
 
-        // Scale the perturbation to the desired distance
-        perturbation.multiply(distance);
+    //     // Scale the perturbation to the desired distance
+    //     perturbation.multiply(distance);
 
-        // Create a new vector by adding the perturbation to the current vector
-        Vector newVector = v.clone();
-        for (int i = 0; i < v.getDimensions(); i++) {
-            newVector.get()[i] += perturbation.get()[i];
-        }
+    //     // Create a new vector by adding the perturbation to the current vector
+    //     Vector newVector = v.clone();
+    //     for (int i = 0; i < v.getDimensions(); i++) {
+    //         newVector.get()[i] += perturbation.get()[i];
+    //     }
 
-        return newVector;
-    }
+    //     return newVector;
+    // }
 
-    public static Vector generateNormalizedVectorAtDistance(Vector v, double distance) {
-        double normV = v.magnitude();
+    // public static Vector generateNormalizedVectorAtDistance(Vector v, double distance) {
+    //     double normV = v.magnitude();
 
-        // Ensure distance is valid
-        if (distance < 0 || normV + 1 < distance || Math.abs(normV - 1) > distance) {
-            throw new IllegalArgumentException("No intersection: distance is out of valid range.");
-        }
+    //     // Ensure distance is valid
+    //     if (distance < 0 || normV + 1 < distance || Math.abs(normV - 1) > distance) {
+    //         throw new IllegalArgumentException("No intersection: distance is out of valid range.");
+    //     }
 
-        // Compute the center of the intersection circle
-        double alpha = (1 + (normV * normV) - (distance * distance)) / (2 * normV);
-        Vector center = v.clone();
-        center.multiply(alpha / normV); // Move v toward the unit sphere
+    //     // Compute the center of the intersection circle
+    //     double alpha = (1 + (normV * normV) - (distance * distance)) / (2 * normV);
+    //     Vector center = v.clone();
+    //     center.multiply(alpha / normV); // Move v toward the unit sphere
 
-        // Compute the radius of the intersection circle
-        double radius = Math.sqrt(1 - (alpha * alpha));
+    //     // Compute the radius of the intersection circle
+    //     double radius = Math.sqrt(1 - (alpha * alpha));
 
-        // Generate a random vector orthogonal to v
-        Random rand = new Random();
-        Vector randomDirection = new Vector(v.getDimensions());
+    //     // Generate a random vector orthogonal to v
+    //     Random rand = new Random();
+    //     Vector randomDirection = new Vector(v.getDimensions());
 
-        // Fill with random Gaussian values
-        for (int i = 0; i < v.getDimensions(); i++) {
-            randomDirection.setNext(rand.nextGaussian());
-        }
-        randomDirection = randomDirection.normalize();
+    //     // Fill with random Gaussian values
+    //     for (int i = 0; i < v.getDimensions(); i++) {
+    //         randomDirection.setNext(rand.nextGaussian());
+    //     }
+    //     randomDirection = randomDirection.normalize();
 
-        // Make it perpendicular to v using Gram-Schmidt
-        double dotProduct = 0;
-        for (int i = 0; i < v.getDimensions(); i++) {
-            dotProduct += randomDirection.get()[i] * v.get()[i];
-        }
-        for (int i = 0; i < v.getDimensions(); i++) {
-            randomDirection.get()[i] -= (dotProduct / (normV * normV)) * v.get()[i];
-        }
-        randomDirection = randomDirection.normalize();
+    //     // Make it perpendicular to v using Gram-Schmidt
+    //     double dotProduct = 0;
+    //     for (int i = 0; i < v.getDimensions(); i++) {
+    //         dotProduct += randomDirection.get()[i] * v.get()[i];
+    //     }
+    //     for (int i = 0; i < v.getDimensions(); i++) {
+    //         randomDirection.get()[i] -= (dotProduct / (normV * normV)) * v.get()[i];
+    //     }
+    //     randomDirection = randomDirection.normalize();
 
-        // Choose a random angle
-        double angle = (double) (2 * Math.PI * rand.nextDouble());
-        Vector result = center.clone();
-        for (int i = 0; i < v.getDimensions(); i++) {
-            result.get()[i] += radius * (double) Math.cos(angle) * randomDirection.get()[i];
-        }
+    //     // Choose a random angle
+    //     double angle = (double) (2 * Math.PI * rand.nextDouble());
+    //     Vector result = center.clone();
+    //     for (int i = 0; i < v.getDimensions(); i++) {
+    //         result.get()[i] += radius * (double) Math.cos(angle) * randomDirection.get()[i];
+    //     }
 
-        return result.normalize(); // Ensure it stays on the unit sphere
-    }
+    //     return result.normalize(); // Ensure it stays on the unit sphere
+    // }
 
     public static Vector generateNormalisedVectorAtDistance(Vector p, double r) {
         int n = p.getDimensions();

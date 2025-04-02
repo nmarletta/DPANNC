@@ -11,6 +11,7 @@ public class Box {
     int count;
     double size;
     Collection<Vector> data;
+    ArrayList<String> list;
     double[] min;
     double[] max;
 
@@ -207,5 +208,13 @@ public class Box {
         }
         str += "---";
         return str;
+    }
+
+    public ArrayList<String> list() {
+        ArrayList<String> list = new ArrayList<String>();
+        for (Vector v : data) {
+            list.add(v.getLabel());
+        }
+        return list;
     }
 }

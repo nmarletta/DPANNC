@@ -11,8 +11,8 @@ public class DBiterator implements Iterator<Vector>, AutoCloseable {
     private final ResultSet rs;
     private boolean hasNext;
 
-    public DBiterator(Connection conn) throws SQLException {
-        this.stmt = conn.prepareStatement("SELECT data FROM vectors");
+    public DBiterator(Connection conn, String table) throws SQLException {
+        this.stmt = conn.prepareStatement("SELECT data FROM " + table);
         this.rs = stmt.executeQuery();
         this.hasNext = rs.next();
     }

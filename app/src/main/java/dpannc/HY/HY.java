@@ -4,10 +4,13 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.sql.SQLException;
 import java.util.*;
 
 import dpannc.Noise;
 import dpannc.Vector;
+import dpannc.database.DB;
+import dpannc.database.DBiterator;
 
 public class HY {
     private double sensitivity;
@@ -24,6 +27,8 @@ public class HY {
     private Noise noise = new Noise(10);
     private Cell root;
 
+    private ArrayList<String> query;
+
     public HY(double sensitivity, double epsilon, double delta) {
         this.sensitivity = sensitivity;
         this.epsilon = epsilon;
@@ -32,14 +37,43 @@ public class HY {
     }
 
     public int query(Vector q, double alpha, double Diameter) {
+        query = new ArrayList<String>();
         return root.query(q, alpha, Diameter);
     }
 
-    public void populate(int n, int d, Path filepath) {
+    public ArrayList<String> queryList() throws Exception {
+        // if (query.isEmpty()) throw new Exception("query list is empty");
+        return query;
+    }
+
+    public void populateFromDB(int n, int d, DB db) throws Exception {
+        ArrayList<Vector> dataset = new ArrayList<Vector>();
+        this.d = d;
+        this.n = n;
+        nt = DP ? n + (4 / epsilon) * log(2 / beta, 10) + noise.Lap(4 / epsilon) : n; // ONLY NOISE OR ALSO THE OTHER
+                                                                                      // THINGS???
+        H = log(nt, 10);
+
+        DBiterator it = db.iterator();
+        int counter = 0;
+        while (it.hasNext()) {
+            Vector v = it.next();
+            dataset.add(v);
+            counter++;
+        }
+
+        Box b = new Box(d, dataset);
+        root = new Cell(b);
+        root.recShrink(0, beta);
+        System.out.println("Data structure complete...");
+    }
+
+    public void populateFromFile(int n, int d, Path filepath) {
         Collection<Vector> dataset = loadfile(n, filepath);
         this.d = d;
         this.n = n;
-        nt = DP ? n + (4 / epsilon) * log(2 / beta, 10) + noise.Lap(4 / epsilon) : n; // ONLY NOISE OR ALSO THE OTHER THINGS??? 
+        nt = DP ? n + (4 / epsilon) * log(2 / beta, 10) + noise.Lap(4 / epsilon) : n; // ONLY NOISE OR ALSO THE OTHER
+                                                                                      // THINGS???
         H = log(nt, 10);
         Box b = new Box(d, dataset);
         root = new Cell(b);
@@ -112,14 +146,18 @@ public class HY {
         public int query(Vector q, double alpha, double radius) {
             if (!outer.intersectsBall(q, radius - alpha * radius * 2))
                 return 0;
-            if (outer.isSubsetOfBall(q, radius - alpha * radius * 2))
+            if (outer.isSubsetOfBall(q, radius - alpha * radius * 2)) {
+                query.addAll(outer.list());
                 return count;
+            }
             if (isLeaf)
                 return 0;
 
             int result = 0;
-            if (left != null) result += left.query(q, alpha, radius);
-            if (right != null) result += right.query(q, alpha, radius);
+            if (left != null)
+                result += left.query(q, alpha, radius);
+            if (right != null)
+                result += right.query(q, alpha, radius);
             return result;
         }
 
@@ -169,7 +207,7 @@ public class HY {
             double T = DP ? (2.0 / 3.0) * count + noise.Lap(1 / eh) : (2.0 / 3.0) * count;
             Box bl = null, br = null, bc = outer, newOuter = outer.emptyClone();
 
-            while (getNoisyCount(bc, DP, 1/eh) >= T && bc.size > 1.0) {
+            while (getNoisyCount(bc, DP, 1 / eh) >= T && bc.size > 1.0) {
                 Box[] split = bc.split();
                 bl = split[0];
                 br = split[1];
@@ -190,7 +228,7 @@ public class HY {
             }
 
             if (bl != null && br != null) {
-                bc = getNoisyCount(bl, DP, 1/eh) > getNoisyCount(br, DP, 1/eh) ? bl : br;
+                bc = getNoisyCount(bl, DP, 1 / eh) > getNoisyCount(br, DP, 1 / eh) ? bl : br;
             }
 
             return new Box[] { newOuter, bc };
@@ -213,7 +251,6 @@ public class HY {
     public static double ln(double N) {
         return Math.log(N);
     }
-
 
     private double getNoisyCount(Box b, boolean DP, double val) {
         return DP ? b.count + noise.Lap(val) : b.count;

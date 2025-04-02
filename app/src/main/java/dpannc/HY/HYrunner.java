@@ -20,7 +20,7 @@ public class HYrunner {
         Path filePath = Paths.get("resources", "generated", d + "D_" + n + ".txt");
         DataGenerator.generateRandom(filePath, d, n, 10, random);
         HY hy = new HY(sensitivity, epsilon, delta);
-        hy.populate(n, d, filePath);
+        hy.populateFromFile(n, d, filePath);
         // hy.print();
 
         // Vector q = new Vector(new double[] {0, 0, 0});

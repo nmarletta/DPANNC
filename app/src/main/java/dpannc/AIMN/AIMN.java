@@ -36,7 +36,6 @@ public class AIMN {
         remainder = 0;
         this.n = n;
         this.d = d;
-        T = d;
         this.c = c;
         lambda = (2 * Math.sqrt(2 * c)) / (c * c + 1);
         r = 1 / Math.pow(log(n, 10), 1.0 / 8.0);
@@ -47,7 +46,7 @@ public class AIMN {
         threshold = (adjSen / epsilon) * ln(1 + (Math.exp(epsilon / 2) - 1) / delta);
         etaU = Math.sqrt((ln(n) / K)) * (lambda / r);
         etaQ = alpha * etaU - 2 * beta * Math.sqrt(ln(K));
-
+        T = (int) (10 * ln(K) / F(etaU));
         root = new Node(0, "0");
         printSettings();
 
@@ -57,12 +56,17 @@ public class AIMN {
         remainderBucket = new ArrayList<String>();
     }
 
-    public void populateFromDB(DB db) throws SQLException {
-        try (DBiterator it = db.iterator()) {
+    public void populateFromDB(String table, DB db) throws SQLException {
+        try (DBiterator it = db.iterator(table)) {
+            int counter = 0;
             while (it.hasNext()) {
                 Vector v = it.next();
                 root.insertPoint(v);
+                printProgress(counter, n, 10);
+                counter++;
             }
+            if (DP)
+                addNoise();
         }
     }
 
@@ -107,8 +111,7 @@ public class AIMN {
     }
 
     public List<String> queryList() throws Exception {
-        if (query.isEmpty())
-            throw new Exception("run 'query(Vector)' first");
+        if (query.isEmpty()) throw new Exception("query list is empty");
         return query;
     }
 
@@ -146,6 +149,7 @@ public class AIMN {
 
     public void printSettings() {
         System.out.println("n: " + n);
+        System.out.println("d: " + d);
         System.out.println("c: " + c);
         System.out.println("lambda: " + lambda);
         System.out.println("r: " + r);
@@ -155,6 +159,7 @@ public class AIMN {
         System.out.println("threshold: " + threshold);
         System.out.println("etaU: " + etaU);
         System.out.println("etaQ: " + etaQ);
+        System.out.println("T: " + T);
     }
 
     public class Node {
@@ -173,7 +178,7 @@ public class AIMN {
             this.noisyCount = 0;
             this.id = id;
 
-            g = new Vector(T).randomGaussian(random);
+            g = new Vector(d).randomGaussian(random);
 
             childNodes = new ArrayList<>();
         }
@@ -201,8 +206,8 @@ public class AIMN {
             while (childNodes.size() < T) {
                 int currID = childNodes.size();// < 1 ? 0 : childNodes.size();
                 Node n = new Node(level + 1, id + ":" + currID);
+                childNodes.add(n);
                 if (n.accepts(v, etaU)) {
-                    childNodes.add(n);
                     n.insertPoint(v);
                     return true;
                 }
@@ -212,7 +217,10 @@ public class AIMN {
 
         public int query(Vector q) {
             if (isLeaf) {
-                query.addAll(buckets.get(id));
+                if (count > 0) {
+                    query.addAll(buckets.get(id));
+                }
+                if (count < 1 && buckets.get(id) != null) System.out.println("ggg");
                 return count;
             } else {
                 int total = 0;
@@ -255,5 +263,28 @@ public class AIMN {
         public int count() {
             return count;
         }
+    }
+
+    public static double F(double eta) {
+        return 0.5 * erfc(eta / Math.sqrt(2));
+    }
+    
+    public static double erfc(double x) {
+        // Abramowitz and Stegun approximation
+        double z = Math.abs(x);
+        double t = 1.0 / (1.0 + 0.5 * z);
+    
+        double r = t * Math.exp(-z*z - 1.26551223 +
+                                t * (1.00002368 +
+                                t * (0.37409196 +
+                                t * (0.09678418 +
+                                t * (-0.18628806 +
+                                t * (0.27886807 +
+                                t * (-1.13520398 +
+                                t * (1.48851587 +
+                                t * (-0.82215223 +
+                                t * 0.17087277)))))))));                            
+    
+        return (x >= 0.0) ? r : 2.0 - r;
     }
 }

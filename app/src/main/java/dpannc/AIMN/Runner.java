@@ -1,10 +1,5 @@
 package dpannc.AIMN;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -109,27 +104,5 @@ public class Runner {
         if (Math.abs(progress % step) < epsilon) {
             System.out.println((int) progress + "% completed");
         }
-    }
-
-    public static List<Vector> getQueryVectors() {
-        Path filePath = Paths.get("resources", "generated", "queries.txt");
-        List<Vector> list = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath.toAbsolutePath().toString()))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(" ");
-                int d = parts.length - 1;
-                String word = parts[0];
-                Vector vector = new Vector(d);
-                for (int i = 1; i <= d; i++) {
-                    vector.setNext(Double.parseDouble(parts[i]));
-                }
-                vector.normalize().setLabel(word);
-                list.add(vector);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return list;
     }
 }

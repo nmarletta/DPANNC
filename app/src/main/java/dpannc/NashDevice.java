@@ -8,9 +8,8 @@ public class NashDevice {
     int dPrime; // target lower dimension
     double sigma; // scaling parameter
     List<Vector> randomGaussians; // list of random Gaussian vectors
-    Random random = new Random();
 
-    public NashDevice(int d, int dPrime, double sigma) {
+    public NashDevice(int d, int dPrime, double sigma, Random random) {
         this.dPrime = dPrime;
         this.sigma = sigma;
         this.randomGaussians = new ArrayList<>();
@@ -50,7 +49,7 @@ public class NashDevice {
         int n = 100; // number of vectors
         String fileName = "NashDeviceExperiment.txt";
 
-        NashDevice nd = new NashDevice(d, dPrime, sigma);
+        NashDevice nd = new NashDevice(d, dPrime, sigma, new Random(10));
         Random rnd = new Random();
 
         // Reference vector v
