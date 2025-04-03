@@ -44,7 +44,7 @@ public class DataGenerator {
             for (int i = 0; i < n; i++) {
                 Vector w = v.sampleOnSphere(dist, random);
                 double actualDist = w.distance(v);
-                if (Math.abs(actualDist-dist) > 0.01) System.out.println(actualDist + " : " + dist);
+                if (Math.abs(actualDist-dist) > 0.0001) System.out.println(actualDist + " : " + dist);
                 w.setLabel("" + i);
                 writer.write(w.toString() + "\n");
             }
@@ -53,34 +53,14 @@ public class DataGenerator {
         }
     }
 
-    public static void atDistanceOnSphere(Path filepath, Vector v, int n, double min, double max, Random random) {
+    public static void atDistanceInSpace(Path filepath, Vector v, int n, double dist, Random random) {
         try (FileWriter writer = new FileWriter(filepath.toAbsolutePath().toString());) {
-            int count = 0;
-            double inc = (max - min) / n;
-            for (double dist = min; dist < max; dist += inc) {
-                Vector w = v.sampleOnSphere(dist, random);
-                double actualDist = w.distance(v);
-                // w.setLabel(count + "(" + actualDist + "):");
-                w.setLabel("" + count);
-                writer.write(w.toString() + "\n");
-                count++;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void atDistanceInSpace(Path filepath, Vector v, int n, double min, double max, Random random) {
-        try (FileWriter writer = new FileWriter(filepath.toAbsolutePath().toString());) {
-            int count = 0;
-            double inc = (max - min) / n;
-            for (double dist = min; dist < max; dist += inc) {
+            for (int i = 0; i < n; i++) {
                 Vector w = v.sampleInSpace(dist, random);
                 double actualDist = w.distance(v);
-                // w.setLabel(count + "(" + actualDist + "):");
-                w.setLabel("" + count);
+                if (Math.abs(actualDist-dist) > 0.0001) System.out.println(actualDist + " : " + dist);
+                w.setLabel("" + i);
                 writer.write(w.toString() + "\n");
-                count++;
             }
         } catch (Exception e) {
             e.printStackTrace();

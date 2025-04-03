@@ -297,32 +297,32 @@ public class Vector {
     // https://extremelearning.com.au/how-to-generate-uniformly-random-points-on-n-spheres-and-n-balls/
     public Vector sampleOnSphere(double r, Random random) {
         int d = this.dimensionality();
-        double R = this.magnitude(); // Radius of the original sphere
-        double maxR = 2 * R;
+        double mag = this.magnitude(); // radius of the sphere that q lies on
+        double diameter = 2 * mag; // diameter of sphere / max distance two points can be from each other
     
-        if (r < 0 || r > maxR)
-            throw new IllegalArgumentException("r must be in [0, " + maxR + "]");
+        if (r < 0 || r > diameter)
+            throw new IllegalArgumentException("r must be in [0, " + diameter + "]");
     
-        double theta = 2 * Math.asin(r / (2 * R));
+        double theta = 2 * Math.asin(r / diameter);
     
-        // Step 1: Normalize input vector to get direction
-        Vector vUnit = this.clone().divide(R);  // Normalize this vector to unit length
+        // normalize input vector to get direction
+        Vector vUnit = this.clone().divide(mag); 
     
-        // Step 2: Sample a random vector z ~ N(0, I)
+        // sample a random vector
         Vector z = new Vector(d).randomGaussian(random);
     
-        // Step 3: Project z orthogonal to vUnit: w = z - (z·v)v
+        // project z orthogonal to vUnit: w = z - (z·v)v
         Vector projection = vUnit.clone().multiply(z.dot(vUnit));
         Vector w = z.clone().subtract(projection);
         w.normalize();
     
-        // Step 4: Rotate around sphere
+        // rotate around sphere
         Vector vPart = vUnit.clone().multiply(Math.cos(theta));
         Vector wPart = w.clone().multiply(Math.sin(theta));
         Vector result = vPart.add(wPart);
     
-        // Step 5: Scale back to original radius
-        return result.multiply(R);
+        // scale back to original magnitude
+        return result.multiply(mag);
     }
 
     public Vector sampleInSpace(double r, Random random) {

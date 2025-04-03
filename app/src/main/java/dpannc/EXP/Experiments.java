@@ -59,13 +59,13 @@ public class Experiments {
         Result BRUTEres = new Result(q, table, db, false);
 
         System.out.println("  QUERY: " + count);
-        int A1 = HYres.amountWithin(r-a);
+        int A1 = HYres.amountLessThan(r-a);
         int A2 = HYres.amountWithin(r-a, r+a);
-        int A3 = HYres.amountOutside(r+a);
+        int A3 = HYres.amountGreaterThan(r+a);
 
-        int B1 = BRUTEres.amountWithin(r-a);
+        int B1 = BRUTEres.amountLessThan(r-a);
         int B2 = BRUTEres.amountWithin(r-a, r+a);
-        int B3 = BRUTEres.amountOutside(r+a);
+        int B3 = BRUTEres.amountGreaterThan(r+a);
 
         System.out.println(" inside: " + A1 + " / " + B1);
         System.out.println("  fuzzy: " + A2 + " / " + B2);
@@ -110,13 +110,13 @@ public class Experiments {
         Result BRUTEres = new Result(q, table, db, true);
 
         System.out.println("  QUERY: " + count);
-        int A1 = AIMNres.amountWithin(r);
+        int A1 = AIMNres.amountLessThan(r);
         int A2 = AIMNres.amountWithin(r, c*r);
-        int A3 = AIMNres.amountOutside(c*r);
+        int A3 = AIMNres.amountGreaterThan(c*r);
 
-        int B1 = BRUTEres.amountWithin(r);
+        int B1 = BRUTEres.amountLessThan(r);
         int B2 = BRUTEres.amountWithin(r, c*r);
-        int B3 = BRUTEres.amountOutside(c*r);
+        int B3 = BRUTEres.amountGreaterThan(c*r);
 
         System.out.println(" inside: " + A1 + " / " + B1);
         System.out.println("  fuzzy: " + A2 + " / " + B2);

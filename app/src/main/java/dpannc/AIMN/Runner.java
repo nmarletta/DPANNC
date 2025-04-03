@@ -4,12 +4,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-import dpannc.DataGenerator;
-import dpannc.NashDevice;
+import dpannc.EXP.DataGenerator;
 import dpannc.Vector;
-// import dpannc.VectorComparators;
-// import dpannc.DataGenerator;
-import dpannc.HY.HY;
 
 public class Runner {
     static int SEED = 123;
@@ -32,18 +28,6 @@ public class Runner {
         Vector q = new Vector(d).random(random, 10);
         int result = AIMN.query(q);
         System.out.println("result: " + result);
-    }
-
-    private static int getDistsCount(double min, double max, Vector q, List<Vector> vectors) {
-        int count = 0;
-        for (Vector v : vectors) {
-            double dist = q.normalize().distance(v.normalize());
-            System.out.println(dist);
-            if (dist >= min && dist < max) {
-                count++;
-            }
-        }
-        return count;
     }
 
     // public static void exp() throws Exception {

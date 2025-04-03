@@ -91,23 +91,23 @@ public class Result {
         return list.size();
     }
 
-    public int amountWithin(double r) {
-        if (r <= 0)
+    public int amountLessThan(double val) {
+        if (val <= 0)
             throw new IllegalArgumentException("r cannot be less or equal to 0");
         int count = 0;
         for (Element e : list) {
-            if (e.value <= r)
+            if (e.value <= val)
                 count++;
         }
         return count;
     }
 
-    public int amountOutside(double r) {
-        if (r <= 0)
+    public int amountGreaterThan(double val) {
+        if (val <= 0)
             throw new IllegalArgumentException("r cannot be less or equal to 0");
         int count = 0;
         for (Element e : list) {
-            if (e.value > r)
+            if (e.value > val)
                 count++;
         }
         return count;
@@ -134,6 +134,27 @@ public class Result {
         return max.value;
     }
 
+    public Result diffBetween(Result b) throws Exception {
+        int size;
+        if (this.size() != b.size())
+            throw new IllegalArgumentException("a and b are not the same size");
+        else
+            size = this.size();
+
+        Result res = new Result();
+        for (int i = 0; i < size; i++) {
+            Element A = this.get(i);
+            Element B = b.get(i);
+            if (!A.label.equals(B.label))
+                throw new IllegalArgumentException(
+                        "elements do not have the same label: '" + A.label + "' - '" + B.label + "'");
+            String label = A.label;
+            double val = A.value - B.value;
+            res.add(new Element(label, val));
+        }
+        return res;
+    }
+
     public Result changeBetween(Result b) throws Exception {
         int size;
         if (this.size() != b.size())
@@ -149,7 +170,8 @@ public class Result {
                 throw new IllegalArgumentException(
                         "elements do not have the same label: '" + A.label + "' - '" + B.label + "'");
             String label = A.label;
-            double val = (A.value - B.value) / A.value;
+            // double val = (A.value - B.value) / A.value;
+            double val = (1 / A.value) * B.value;
             res.add(new Element(label, val));
         }
         return res;
