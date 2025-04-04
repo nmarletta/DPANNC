@@ -10,21 +10,15 @@ import dpannc.database.DB;
 import dpannc.database.DBiterator;
 
 public class Result {
-    Vector q;
     ArrayList<Element> list;
-    Element min;
-    Element max;
 
     public Result() {
-        q = null;
         list = new ArrayList<Element>();
     }
 
-    public Result(Vector q, Collection<String> vectors, String table, DB db, boolean normalize) throws SQLException {
-        this.q = q.clone();
+    public Result loadDistancesBetween(Vector query, Collection<String> vectors, String table, DB db, boolean normalize) throws SQLException {
+        Vector q = query.clone();
         list = new ArrayList<Element>();
-        double minVal = Double.MAX_VALUE;
-        double maxVal = 0;
 
         for (String label : vectors) {
             Vector v = db.getVectorByLabel(label, table);
@@ -32,26 +26,18 @@ public class Result {
                 continue;
             if (normalize) {
                 v.normalize();
-                this.q.normalize();
+                q.normalize();
             }
-            double dist = this.q.distance(v);
+            double dist = q.distance(v);
             Element el = new Element(label, dist);
-            if (dist < minVal) {
-                minVal = dist;
-                min = el;
-            } else if (dist > maxVal) {
-                maxVal = dist;
-                max = el;
-            }
             list.add(el);
         }
+        return this;
     }
 
-    public Result(Vector q, String table, DB db, boolean normalize) throws SQLException {
-        this.q = q.clone();
+    public Result loadDistancesBetween(Vector query, String table, DB db, boolean normalize) throws SQLException {
+        Vector q = query.clone();
         list = new ArrayList<Element>();
-        double minVal = Double.MAX_VALUE;
-        double maxVal = 0;
         DBiterator it = db.iterator(table);
         while (it.hasNext()) {
             Vector v = it.next();
@@ -59,20 +45,17 @@ public class Result {
                 continue;
             if (normalize) {
                 v.normalize();
-                this.q.normalize();
+                q.normalize();
             }
-            double dist = this.q.distance(v);
+            double dist = q.distance(v);
             Element el = new Element(v.getLabel(), dist);
-            if (dist < minVal) {
-                minVal = dist;
-                min = el;
-            } else if (dist > maxVal) {
-                maxVal = dist;
-                max = el;
-            }
             list.add(el);
         }
+        return this;
+    }
 
+    public void add(String label, double val) {
+        list.add(new Element(label, val));
     }
 
     public void add(Element e) {
@@ -126,13 +109,13 @@ public class Result {
         return count;
     }
 
-    public double minVal() {
-        return min.value;
-    }
+    // public double minVal() {
+    //     return min.value;
+    // }
 
-    public double maxVal() {
-        return max.value;
-    }
+    // public double maxVal() {
+    //     return max.value;
+    // }
 
     public Result diffBetween(Result b) throws Exception {
         int size;
@@ -241,19 +224,8 @@ public class Result {
     @Override
     public Result clone() {
         Result c = new Result();
-        if (this.q != null) {
-            c.q = this.q.clone();
-        }
-
         for (Element e : this.list) {
             c.list.add(new Element(e.label, e.value));
-        }
-
-        if (this.min != null) {
-            c.min = new Element(this.min.label, this.min.value);
-        }
-        if (this.max != null) {
-            c.max = new Element(this.max.label, this.max.value);
         }
         return c;
     }

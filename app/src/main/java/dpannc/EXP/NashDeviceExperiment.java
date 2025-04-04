@@ -19,56 +19,109 @@ public class NashDeviceExperiment {
     }
 
     // Difference in distance after Nash Device tranformation
-    // For vectors ON SPHERE
     public static void exp1() throws Exception {
-        String name = "diff_onsphere";
+        DB db = new DB("dpannc");
+
+        String name = "diff_new";
         Path filepathTarget = Paths.get("results/nash", name + ".csv");
         try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
             // CSV header
-            writer.write("distance from q (on sphere) / nash device diff\n"); // title
+            writer.write("distance from q (in space) / nash device diff\n"); // title
             writer.write("0\n"); // coulmns on x-axis
             writer.write("1,2\n"); // columns on y-axis
 
-            writer.write("dist,mean,MSD\n"); // coulumns
+            writer.write("dist,median,MSD\n"); // coulumns
 
             // settings
             int SEED = 10;
             Random random = new Random(SEED);
             int n = 100; // sample size
             int d = 300; // dimensions
-            double mag = 1; // magnitude of initial vector
-            Vector q = new Vector(d).randomGaussian(random).setMagnitude(mag);
+            double sigma = 1; // magnitude of vectors after transformation
 
-            // generate dataset of vectors
-            Path filepathSource = Paths.get("resources/generated", d + "D_" + n + ".txt");
             double min = 0.001;
-            double max = 1.9;
-            double inc = 0.05;
+            double max = 5;
+            double inc = 0.1;
+
+            NashDevice nd = new NashDevice(d, d, 1, random);
+
             for (double dist = min; dist < max; dist += inc) {
-                DataGenerator.atDistanceOnSphere(filepathSource, q, n, dist, random);
+                Result diff = new Result();
 
-                // load vectors into database - two identical tables
-                DB db = new DB("dpannc");
-                String table1 = "v1";
-                String table2 = "v2";
-                db.loadVectorsIntoDB(table1, filepathSource, n, d);
-                db.loadVectorsIntoDB(table2, filepathSource, n, d);
+                for (int i = 0; i < n; i++) {
+                    // generate vectors
+                    Vector q1 = new Vector(d).randomGaussian(random);
+                    Vector v1 = q1.sampleInSpace(dist, random);
 
-                // apply Nash Transform on one table
-                NashDevice nd = new NashDevice(d, d, SEED, random);
-                db.applyNashTransform(nd, table2);
+                    // apply Nash Transform
+                    Vector q2 = nd.transform(q1);
+                    Vector v2 = nd.transform(v1);
 
-                // calculate results
-                Result dists1 = new Result(q, table1, db, false);
-                Result dists2 = new Result(q, table2, db, false);
-                Result diff = dists1.diffBetween(dists2);
+                    // save distances before and after transformation
+                    diff.add(""+i, q1.distance(v1) - q2.distance(v2));
+                }
 
                 // write result to file
                 writer.write(dist + "," + diff.median() + "," + diff.msd() + "\n");
             }
             // metadata
             writer.write("# SEED=" + SEED + ", d=" + d + ", n=" + n + "\n");
-            writer.write("# Magnitude of initial vector: " + mag + "\n");
+            writer.write("# Magnitude of vectors after transformation: " + sigma + "\n");
+
+        } catch (IOException e) {
+            System.err.println("Error writing results: " + e.getMessage());
+        }
+    }
+
+    // Distances after Nash Device tranformation
+    public static void exp2() throws Exception {
+        DB db = new DB("dpannc");
+
+        String name = "dist_trans";
+        Path filepathTarget = Paths.get("results/nash", name + ".csv");
+        try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
+            // CSV header
+            writer.write("initial distance / transformed distance\n"); // title
+            writer.write("0\n"); // coulmns on x-axis
+            writer.write("1\n"); // columns on y-axis
+
+            writer.write("distance pre transformation, distance post transformation\n"); // coulumns
+
+            // settings
+            int SEED = 10;
+            Random random = new Random(SEED);
+            int n = 100; // sample size
+            int d = 300; // dimensions
+            double sigma = 1; // magnitude of vectors after transformation
+
+            double min = 0.001;
+            double max = 5;
+            double inc = 0.1;
+
+            NashDevice nd = new NashDevice(d, d, 1, random);
+
+            for (double dist = min; dist < max; dist += inc) {
+                Result transformedDists = new Result();
+
+                for (int i = 0; i < n; i++) {
+                    // generate vectors
+                    Vector q1 = new Vector(d).randomGaussian(random);
+                    Vector v1 = q1.sampleInSpace(dist, random);
+
+                    // apply Nash Transform
+                    Vector q2 = nd.transform(q1);
+                    Vector v2 = nd.transform(v1);
+
+                    // save distances after transformation
+                    transformedDists.add(""+i, q2.distance(v2));
+                }
+
+                // write result to file
+                writer.write(dist + "," + transformedDists.median() + "\n");
+            }
+            // metadata
+            writer.write("# SEED=" + SEED + ", d=" + d + ", n=" + n + "\n");
+            writer.write("# Magnitude of vectors after transformation: " + sigma + "\n");
 
         } catch (IOException e) {
             System.err.println("Error writing results: " + e.getMessage());
@@ -77,7 +130,7 @@ public class NashDeviceExperiment {
 
     // Difference in distance after Nash Device tranformation
     // For vectors IN SPACE
-    public static void exp2() throws Exception {
+    public static void exp3() throws Exception {
         String name = "change_inspace";
         Path filepathTarget = Paths.get("results/nash", name + ".csv");
         try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
@@ -116,8 +169,8 @@ public class NashDeviceExperiment {
                 db.applyNashTransform(nd, table2);
 
                 // calculate results
-                Result dists1 = new Result(q, table1, db, false);
-                Result dists2 = new Result(q, table2, db, false);
+                Result dists1 = new Result().loadDistancesBetween(q, table1, db, false);
+                Result dists2 = new Result().loadDistancesBetween(q, table2, db, false);
                 Result change = dists1.changeBetween(dists2);
 
                 // write result to file
@@ -134,7 +187,7 @@ public class NashDeviceExperiment {
 
     // Difference in distance after Nash Device tranformation
     // For vectors IN SPACE
-    public static void exp3() throws Exception {
+    public static void exp4() throws Exception {
         DB db = new DB("dpannc");
         String name = "diff_both";
         Path filepathTarget = Paths.get("results/nash", name + ".csv");
@@ -154,7 +207,7 @@ public class NashDeviceExperiment {
             double mag = 1; // magnitude of initial vector
             Vector q = new Vector(d).randomGaussian(random).setMagnitude(mag);
 
-            // 
+            //
             Path filepathSource = Paths.get("resources/generated", d + "D_" + n + ".txt");
             double min = 0.001;
             double max = 1.9; // mag * 2 (diameter of sphere)
@@ -184,12 +237,12 @@ public class NashDeviceExperiment {
                 db.applyNashTransform(nd, tblInSpace2);
 
                 // calculate results
-                Result distsOnSphere1 = new Result(q, tblOnSphere1, db, false);
-                Result distsOnSphere2 = new Result(q, tblOnSphere2, db, false);
+                Result distsOnSphere1 = new Result().loadDistancesBetween(q, tblOnSphere1, db, false);
+                Result distsOnSphere2 = new Result().loadDistancesBetween(q, tblOnSphere2, db, false);
                 Result diffOnSphere = distsOnSphere1.diffBetween(distsOnSphere2);
 
-                Result distsInSpace1 = new Result(q, tblInSpace1, db, false);
-                Result distsInSpace2 = new Result(q, tblInSpace2, db, false);
+                Result distsInSpace1 = new Result().loadDistancesBetween(q, tblInSpace1, db, false);
+                Result distsInSpace2 = new Result().loadDistancesBetween(q, tblInSpace2, db, false);
                 Result diffInSpace = distsInSpace1.diffBetween(distsInSpace2);
 
                 // write result to file
@@ -204,7 +257,7 @@ public class NashDeviceExperiment {
         }
     }
 
-    public static void exp4() throws Exception {
+    public static void exp5() throws Exception {
         DB db = new DB("dpannc");
         String name = "closest";
         Path filepathTarget = Paths.get("results/nash", name + ".csv");
@@ -224,7 +277,7 @@ public class NashDeviceExperiment {
             double mag = 1; // magnitude of initial vector
             // Vector q = new Vector(d).randomGaussian(random).setMagnitude(mag);
 
-            // 
+            //
             Path filepathSource = Paths.get("resources/fasttext", "dk-300d.txt");
             double min = 0.001;
             double max = 1.9; // mag * 2 (diameter of sphere)
@@ -243,8 +296,8 @@ public class NashDeviceExperiment {
                 db.applyNashTransform(nd, table2);
 
                 // calculate results
-                Result distsPre = new Result(q, table1, db, false);
-                Result distsPost = new Result(q, table2, db, false);
+                Result distsPre = new Result().loadDistancesBetween(q, table1, db, false);
+                Result distsPost = new Result().loadDistancesBetween(q, table2, db, false);
 
                 double res1 = distsPre.amountLessThan(dist);
                 double res2 = distsPost.amountLessThan(dist);
