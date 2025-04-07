@@ -178,6 +178,19 @@ public class Vector {
     }
 
     /**
+     * Subtracts each component of the vector by the given value.
+     *
+     * @param v the value to subtract by.
+     * @return the updated vector.
+     */
+    public Vector subtract(double v) {
+        for (int c = 0; c < components.length; c++) {
+            this.components[c] -= v;
+        }
+        return this;
+    }
+
+    /**
      * Divides each component of the vector by a scalar.
      *
      * @param n the scalar value to divide by.
@@ -328,6 +341,33 @@ public class Vector {
     public Vector sampleInSpace(double r, Random random) {
         return new Vector(this.dimensionality()).randomGaussian(random).setMagnitude(r).add(this);
     }
+
+    public Vector sampleWithDot(double targetDot, Random random) {
+        Vector q = this.clone();
+        double qNormSq = q.dot(q);
+    
+        // Base vector in the direction of q that satisfies dot(q, base) = targetDot
+        Vector base = q.clone().multiply(targetDot / qNormSq);
+    
+        // Generate a random Gaussian vector
+        Vector r = new Vector(q.dimensionality()).randomGaussian(random);
+    
+        // Project r orthogonally to q
+        double projectionScale = q.dot(r) / qNormSq;
+        Vector projection = q.clone().multiply(projectionScale);
+        Vector rPerp = r.subtract(projection);  // Now rPerp ⋅ q == 0
+        // Final vector
+        return base.add(rPerp);
+    }
+
+    // q_norm_sq = np.dot(q, q)
+    // q_hat = q / np.sqrt(q_norm_sq)
+
+    // v0 = (t / q_norm_sq) * q
+    // r = random.normal(0, 1, size=len(q))
+    // r_perp = r - np.dot(q_hat, r) * q_hat
+
+    // return v0 + alpha * r_perp
 
     /**
      * Returns a string representation of the vector.

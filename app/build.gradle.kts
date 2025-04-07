@@ -25,6 +25,9 @@ dependencies {
     implementation(libs.guava)
 
     implementation ("org.xerial:sqlite-jdbc:3.41.2.1")
+
+    implementation("org.apache.commons:commons-math3:3.6.1")
+
 }
 
 // Apply a specific Java toolchain to ease working on different environments.

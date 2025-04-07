@@ -34,84 +34,44 @@ public class NashDevice {
         while (i < dPrime) {
             double scale = Math.sqrt(2.0 / dPrime);
             double dotProduct = randomGaussians.get(g++).dot(x);
-            transformedComponents[i++] = scale * Math.cos(sigma * dotProduct) / sigma;
+            transformedComponents[i++] = scale * Math.cos(sigma * dotProduct);
             if (i < dPrime) {
-                transformedComponents[i++] = scale * Math.sin(sigma * dotProduct) / sigma;
+                transformedComponents[i++] = scale * Math.sin(sigma * dotProduct);
             }
         }
-        return new Vector(transformedComponents).setLabel(x.getLabel()).normalize();
+        return new Vector(transformedComponents).setLabel(x.getLabel());
     }
 
     public static void main(String[] args) {
         int d = 10; // input dimensionality
-        int dPrime = 4; // output dimensionality
+        int dPrime = 10; // output dimensionality
         double sigma = 1.0;
         int n = 100; // number of vectors
         String fileName = "NashDeviceExperiment.txt";
 
-        NashDevice nd = new NashDevice(d, dPrime, sigma, new Random(10));
-        Random rnd = new Random();
+        Random rnd1 = new Random(10);
+        Random rnd2 = new Random();
 
         // Reference vector v
-        Vector v = new Vector(d).randomGaussian(rnd);
-        Vector w = nd.transform(v);
-
-        // Generate original vectors
-        List<Vector> originalVectors = new ArrayList<>();
-        for (int i = 0; i < n; i++) {
-            Vector x = new Vector(d).randomGaussian(rnd).normalize().setLabel("x" + i);
-            originalVectors.add(x);
-        }
+        Vector v1 = new Vector(d).randomGaussian(rnd1);
+        Vector v2 = v1.sampleWithDot(1, rnd1);
 
         // Generate transformed vectors
-        List<Vector> transformedVectors = new ArrayList<>();
-        for (Vector x : originalVectors) {
-            Vector y = nd.transform(x).setLabel("y" + x.getLabel().substring(1));
-            transformedVectors.add(y);
-        }
+        NashDevice nd = new NashDevice(d, dPrime, sigma, rnd2);
+        Vector w1 = nd.transform(v1);
+        Vector w2 = nd.transform(v2);
 
-        double[] errors = new double[n];
-        double errorSum = 0;
+        System.out.println("v1.mag: " + v1.magnitude() + ", v2.mag: " + v2.magnitude());
+        System.out.println("w1.mag: " + w1.magnitude() + ", w2.mag: " + w2.magnitude());
+        System.out.println("v1.dot(v2): " + v1.dot(v2));
+        System.out.println("w1.dot(w2): " + w1.dot(w2));
 
-        // Write results to CSV
-        try (FileWriter writer = new FileWriter(fileName)) {
-            writer.write("original_label original_distance transformed_label transformed_distance\n");
-            for (int i = 0; i < n; i++) {
-                Vector orig = originalVectors.get(i);
-                Vector trans = transformedVectors.get(i);
-                double dOrig = orig.distance(v);
-                double dTrans = trans.distance(w); // NOTE: must transform `v` to compare fairly, see below
-                double ratio = dTrans / dOrig;
-                double err = Math.abs(ratio - 1.0); // relative error
-                errorSum += err;
-                errors[i] = err;
+        // for (int i = 1; i < 100; i++) {
+        // NashDevice nd = new NashDevice(d, d, i, rnd);
+        // Vector q = nd.transform(v);
+        // System.out.println("sigma: " + i + ", mag: " + q.magnitude());
+        // }
 
-                writer.write(String.format("%s %.6f %s %.6f %.6f\n",
-                        orig.getLabel(), dOrig,
-                        trans.getLabel(), dTrans,
-                        err));
-            }
-            System.out.println("CSV written to " + fileName);
-            // Compute mean
-            double mean = errorSum / n;
-
-            // Compute variance
-            double variance = 0;
-            for (double e : errors) {
-                variance += Math.pow(e - mean, 2);
-            }
-            variance /= n;
-
-            // Stddev
-            double stddev = Math.sqrt(variance);
-
-            System.out.printf("Mean error: %.6f\n", mean);
-            System.out.printf("Variance: %.6f\n", variance);
-            System.out.printf("Std Dev: %.6f\n", stddev);
-            System.out.println("CSV written to " + fileName);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
 }

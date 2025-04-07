@@ -23,38 +23,31 @@ public class VectorSampleExperiment {
             // CSV header
             writer.write("distance from q / mean standard deviation\n"); // title
             writer.write("0\n"); // coulmns on x-axis
-            writer.write("1,2\n"); // columns on y-axis
-            writer.write("dist,onSphere,inSpace\n"); // coulumns
+            writer.write("1\n"); // columns on y-axis
+            writer.write("dist,sampled dist MSD\n"); // coulumns
 
             // settings
             int SEED = 10;
             Random random = new Random(SEED);
             int n = 100; // sample size
             int d = 300; // dimensions
-            Vector q = new Vector(d).randomGaussian(random);
+            int rep = 100;
 
             // generate dataset of vectors
             Path filepathSource = Paths.get("resources/generated", d + "D_" + n + ".txt");
-            double min = 0.001;
-            double max = 1.9;
-            double inc = 0.05;
+            double min = 0.01;
+            double max = 10;
+            double inc = 0.5;
             for (double dist = min; dist < max; dist += inc) {
-                // ON SPHERE
-                DataGenerator.atDistanceOnSphere(filepathSource, q, n, dist, random);
-                String tblOnSphere = "onSphere";
-                db.loadVectorsIntoDB(tblOnSphere, filepathSource, n, d);
-
-                // IN SPACE
-                DataGenerator.atDistanceOnSphere(filepathSource, q, n, dist, random);
-                String tblInSpace = "inSpace";
-                db.loadVectorsIntoDB(tblInSpace, filepathSource, n, d);
-
-                // calculate results
-                Result onSphereRes = new Result(q, tblOnSphere, db, false);
-                Result inSpaceRes = new Result(q, tblInSpace, db, false);
+                Result result = new Result();
+                for (int i = 0; i < rep; i++) {
+                    Vector v = new Vector(d).randomGaussian(random);
+                    Vector w = v.sampleInSpace(dist, random);
+                    result.add("" + i, v.distance(w));
+                }
 
                 // write result to file
-                writer.write(dist + "," + onSphereRes.msd() + "," + inSpaceRes.msd() + "\n"); 
+                writer.write(dist + "," + result.msd() + "\n"); 
             }
 
         } catch (IOException e) {

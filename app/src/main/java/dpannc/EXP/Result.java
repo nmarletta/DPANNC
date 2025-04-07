@@ -16,18 +16,12 @@ public class Result {
         list = new ArrayList<Element>();
     }
 
-    public Result loadDistancesBetween(Vector query, Collection<String> vectors, String table, DB db, boolean normalize) throws SQLException {
-        Vector q = query.clone();
+    public Result loadDistancesBetween(Vector q, Collection<String> vectors, String table, DB db) throws SQLException {
         list = new ArrayList<Element>();
-
         for (String label : vectors) {
             Vector v = db.getVectorByLabel(label, table);
             if (q.getLabel().equals(v.getLabel()))
                 continue;
-            if (normalize) {
-                v.normalize();
-                q.normalize();
-            }
             double dist = q.distance(v);
             Element el = new Element(label, dist);
             list.add(el);
@@ -35,19 +29,41 @@ public class Result {
         return this;
     }
 
-    public Result loadDistancesBetween(Vector query, String table, DB db, boolean normalize) throws SQLException {
-        Vector q = query.clone();
+    public Result loadDistancesBetween(Vector q, String table, DB db) throws SQLException {
         list = new ArrayList<Element>();
         DBiterator it = db.iterator(table);
         while (it.hasNext()) {
             Vector v = it.next();
             if (q.getLabel().equals(v.getLabel()))
                 continue;
-            if (normalize) {
-                v.normalize();
-                q.normalize();
-            }
             double dist = q.distance(v);
+            Element el = new Element(v.getLabel(), dist);
+            list.add(el);
+        }
+        return this;
+    }
+
+    public Result loadDotProductBetween(Vector q, Collection<String> vectors, String table, DB db) throws SQLException {
+        list = new ArrayList<Element>();
+        for (String label : vectors) {
+            Vector v = db.getVectorByLabel(label, table);
+            if (q.getLabel().equals(v.getLabel()))
+                continue;
+            double dist = q.dot(v);
+            Element el = new Element(label, dist);
+            list.add(el);
+        }
+        return this;
+    }
+
+    public Result loadDotProductBetween(Vector q, String table, DB db) throws SQLException {
+        list = new ArrayList<Element>();
+        DBiterator it = db.iterator(table);
+        while (it.hasNext()) {
+            Vector v = it.next();
+            if (q.getLabel().equals(v.getLabel()))
+                continue;
+            double dist = q.dot(v);
             Element el = new Element(v.getLabel(), dist);
             list.add(el);
         }
