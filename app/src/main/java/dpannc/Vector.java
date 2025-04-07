@@ -338,8 +338,8 @@ public class Vector {
         return result.multiply(mag);
     }
 
-    public Vector sampleInSpace(double r, Random random) {
-        return new Vector(this.dimensionality()).randomGaussian(random).setMagnitude(r).add(this);
+    public Vector sampleWithDistance(double dist, Random random) {
+        return new Vector(this.dimensionality()).randomGaussian(random).setMagnitude(dist).add(this);
     }
 
     public Vector sampleWithDot(double targetDot, Random random) {

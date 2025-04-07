@@ -3,7 +3,9 @@ package dpannc.EXP;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import dpannc.Vector;
 import dpannc.database.DB;
@@ -99,6 +101,18 @@ public class Result {
                 count++;
         }
         return count;
+    }
+
+    public Set<String> lessThan(double val) {
+        if (val <= 0)
+            throw new IllegalArgumentException("r cannot be less or equal to 0");
+        Set<String> result = new HashSet<String>();
+        int count = 0;
+        for (Element e : list) {
+            if (e.value <= val)
+                result.add(e.label);
+        }
+        return result;
     }
 
     public int amountGreaterThan(double val) {
@@ -201,7 +215,7 @@ public class Result {
         }
     }
 
-    public double msd() {
+    public double stddev() {
         if (list.isEmpty())
             return 0;
         double mean = mean();
@@ -227,6 +241,34 @@ public class Result {
             return deviations.get(mid);
         }
     }
+
+    public double quantile(double q) {
+        if (list.isEmpty()) return 0;
+        if (q < 0 || q > 1) {
+            throw new IllegalArgumentException("Quantile must be between 0 and 1");
+        }
+    
+        List<Double> values = list.stream()
+                .map(e -> e.value)
+                .sorted()
+                .toList();
+    
+        int n = values.size();
+        if (n == 1) return values.get(0);
+    
+        double pos = q * (n - 1); // position in the sorted list
+        int lower = (int) Math.floor(pos);
+        int upper = (int) Math.ceil(pos);
+        double fraction = pos - lower;
+    
+        // Linear interpolation if not exact
+        if (lower == upper) {
+            return values.get(lower);
+        } else {
+            return values.get(lower) * (1 - fraction) + values.get(upper) * fraction;
+        }
+    }
+    
 
     @Override
     public String toString() {
