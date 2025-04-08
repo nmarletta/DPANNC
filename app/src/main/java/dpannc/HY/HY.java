@@ -46,7 +46,7 @@ public class HY {
         return query;
     }
 
-    public void populateFromDB(int n, int d, DB db) throws Exception {
+    public void populateFromDB(int n, int d, String table, DB db) throws Exception {
         ArrayList<Vector> dataset = new ArrayList<Vector>();
         this.d = d;
         this.n = n;
@@ -54,7 +54,7 @@ public class HY {
                                                                                       // THINGS???
         H = log(nt, 10);
 
-        DBiterator it = db.iterator();
+        DBiterator it = db.iterator(table);
         int counter = 0;
         while (it.hasNext()) {
             Vector v = it.next();
@@ -82,6 +82,7 @@ public class HY {
     }
 
     public static void main(String[] args) {
+        
         Collection<Vector> dataset = new ArrayList<>();
         dataset.add(new Vector(new double[] { -9.0, 10.0 }));
         dataset.add(new Vector(new double[] { 9.0, -10.0 }));
@@ -94,12 +95,17 @@ public class HY {
         Box rootBox = new Box(2, dataset);
         // System.out.println("root size: " + rootBox.size);
         HY tree = new HY(1.0, 0.5, 0.01);
+        tree.DP(false);
         HY.Cell root = tree.new Cell(rootBox);
         double eh = Math.pow(3.0 / 4.0, tree.H - 0) * tree.epsilon / 100;
         Box[] result = root.shrink(0, 0.01);
         System.out.println(result[0].toString());
         System.out.println(result[1].toString());
 
+    }
+
+    public void DP(boolean b) {
+        DP = b;
     }
 
     public void print() {

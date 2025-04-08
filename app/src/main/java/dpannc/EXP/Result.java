@@ -139,14 +139,6 @@ public class Result {
         return count;
     }
 
-    // public double minVal() {
-    //     return min.value;
-    // }
-
-    // public double maxVal() {
-    //     return max.value;
-    // }
-
     public Result diffBetween(Result b) throws Exception {
         int size;
         if (this.size() != b.size())
@@ -242,10 +234,10 @@ public class Result {
         }
     }
 
-    public double quantile(double q) {
+    public double percentile(double q) {
         if (list.isEmpty()) return 0;
         if (q < 0 || q > 1) {
-            throw new IllegalArgumentException("Quantile must be between 0 and 1");
+            throw new IllegalArgumentException("Percentile must be between 0 and 1");
         }
     
         List<Double> values = list.stream()
@@ -261,12 +253,24 @@ public class Result {
         int upper = (int) Math.ceil(pos);
         double fraction = pos - lower;
     
-        // Linear interpolation if not exact
+        // linear interpolation
         if (lower == upper) {
             return values.get(lower);
         } else {
             return values.get(lower) * (1 - fraction) + values.get(upper) * fraction;
         }
+    }
+
+    public double distanceToKNearest(int k) {
+        if (k <= 0 || k > list.size()) {
+            throw new IllegalArgumentException("k must be between 1 and the number of elements in the result");
+        }
+    
+        return list.stream()
+            .map(e -> e.value)
+            .sorted()
+            .toList()
+            .get(k - 1);
     }
     
 

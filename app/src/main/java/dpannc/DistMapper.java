@@ -24,7 +24,8 @@ public class DistMapper {
 
     static {
         try {
-            loadFromCSV("results/nash/dist_map.csv");
+            Path path = Paths.get(System.getProperty("user.dir"), "../results", "nash", "dist_map.csv");
+            loadFromCSV(path.toString());
         } catch (IOException e) {
             System.err.println("Failed to initialize DistMapper: " + e.getMessage());
         }
@@ -73,7 +74,15 @@ public class DistMapper {
 
     // Accessors
     public static double getMedian(double r) {
-        return medianSpline.value(r);
+        try {
+            if (medianSpline == null) {
+                throw new IllegalStateException("medianSpline is not initialized.");
+            }
+            return medianSpline.value(r);
+        } catch (Exception e) {
+            System.err.println("DistMapper.getMedian() failed for r = " + r + ": " + e.getMessage());
+            return Double.NaN; 
+        }
     }
 
     public static double getMean(double r) {

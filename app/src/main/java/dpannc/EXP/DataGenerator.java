@@ -56,7 +56,7 @@ public class DataGenerator {
     public static void atDistanceInSpace(Path filepath, Vector v, int n, double dist, Random random) {
         try (FileWriter writer = new FileWriter(filepath.toAbsolutePath().toString());) {
             for (int i = 0; i < n; i++) {
-                Vector w = v.sampleInSpace(dist, random);
+                Vector w = v.sampleWithDistance(dist, random);
                 double actualDist = w.distance(v);
                 if (Math.abs(actualDist-dist) > 0.0001) System.out.println(actualDist + " : " + dist);
                 w.setLabel("" + i);

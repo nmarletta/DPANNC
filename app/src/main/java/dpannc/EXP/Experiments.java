@@ -43,7 +43,7 @@ public class Experiments {
         double a = 0.01;
 
         HY hy = new HY(sensitivity, epsilon, delta);
-        hy.populateFromDB(n, d, db);
+        hy.populateFromDB(n, d, table, db);
         
         Vector q = new Vector(d).random(random, 10);
 
@@ -55,8 +55,8 @@ public class Experiments {
         // hy.print();
 
         List<String> queryList = hy.queryList();
-        Result HYres = new Result().loadDistancesBetween(q, queryList, table, db, false);
-        Result BRUTEres = new Result().loadDistancesBetween(q, table, db, false);
+        Result HYres = new Result().loadDistancesBetween(q, queryList, table, db);
+        Result BRUTEres = new Result().loadDistancesBetween(q, table, db);
 
         System.out.println("  QUERY: " + count);
         int A1 = HYres.amountLessThan(r-a);
@@ -106,8 +106,8 @@ public class Experiments {
         int count = aimn.query(q);
 
         List<String> queryList = aimn.queryList();
-        Result AIMNres = new Result().loadDistancesBetween(q, queryList, table, db, true);
-        Result BRUTEres = new Result().loadDistancesBetween(q, table, db, true);
+        Result AIMNres = new Result().loadDistancesBetween(q, queryList, table, db);//true
+        Result BRUTEres = new Result().loadDistancesBetween(q, table, db);// true
 
         System.out.println("  QUERY: " + count);
         int A1 = AIMNres.amountLessThan(r);

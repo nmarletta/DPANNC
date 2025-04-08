@@ -54,7 +54,7 @@ public class VectorTest {
         double mag = 3.0;
         double dist = 1.2;
         Vector v = new Vector(10).randomGaussian(rnd).setMagnitude(mag);
-        Vector w = v.sampleInSpace(dist, rnd);
+        Vector w = v.sampleWithDistance(dist, rnd);
         assertEquals(dist, v.distance(w), 0.0001);
     }
 
@@ -71,7 +71,7 @@ public class VectorTest {
         Random rnd = new Random(42); // Seed for reproducibility
 
         Vector v = new Vector(10).randomGaussian(rnd).setMagnitude(mag);
-        Vector w = v.sampleInSpace(dist, rnd);
+        Vector w = v.sampleWithDistance(dist, rnd);
 
         assertEquals(dist, v.distance(w), 0.0001, "Distance from original vector should match dist");
     }

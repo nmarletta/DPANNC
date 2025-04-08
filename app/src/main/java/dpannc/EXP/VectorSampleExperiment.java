@@ -42,12 +42,12 @@ public class VectorSampleExperiment {
                 Result result = new Result();
                 for (int i = 0; i < rep; i++) {
                     Vector v = new Vector(d).randomGaussian(random);
-                    Vector w = v.sampleInSpace(dist, random);
+                    Vector w = v.sampleWithDistance(dist, random);
                     result.add("" + i, v.distance(w));
                 }
 
                 // write result to file
-                writer.write(dist + "," + result.msd() + "\n"); 
+                writer.write(dist + "," + result.stddev() + "\n"); 
             }
 
         } catch (IOException e) {

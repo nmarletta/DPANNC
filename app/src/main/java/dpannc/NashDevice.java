@@ -86,16 +86,16 @@ public class NashDevice {
     }
     
     public static void main(String[] args) {
-        int d = 8;
-        int dPrime = d;
-        double sigma = 1/Math.sqrt(2);
+        int d = 3;
+        int dPrime = 2;
 
-        Random rnd1 = new Random(10);
+        Random rnd1 = new Random();
         Random rnd2 = new Random();
 
 
         Vector v1 = new Vector(d).randomGaussian(rnd1);
-        Vector v2 = v1.sampleWithDot(1, rnd1);
+        // Vector v2 = v1.sampleWithDot(1, rnd1);
+        Vector v2 = v1.sampleWithDistance(3, rnd1);
 
 
         NashDevice nd = new NashDevice(d, dPrime, rnd2);

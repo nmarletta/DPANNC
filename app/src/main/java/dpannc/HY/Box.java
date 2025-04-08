@@ -54,7 +54,7 @@ public class Box {
         }
 
         for (Vector v : dataset) {
-            for (int i = 0; i < v.getDimensions(); i++) {
+            for (int i = 0; i < v.dimensionality(); i++) {
                 min[i] = Math.min(min[i], v.get(i));
                 max[i] = Math.max(max[i], v.get(i));
             }

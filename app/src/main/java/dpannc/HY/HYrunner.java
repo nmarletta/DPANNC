@@ -4,7 +4,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Random;
 
-import dpannc.DataGenerator;
 import dpannc.NashDevice;
 import dpannc.Vector;
 
@@ -18,7 +17,7 @@ public class HYrunner {
         int n = 10000;
         int d = 3;
         Path filePath = Paths.get("resources", "generated", d + "D_" + n + ".txt");
-        DataGenerator.generateRandom(filePath, d, n, 10, random);
+        // DataGenerator.generateRandom(filePath, d, n, 10, random);
         HY hy = new HY(sensitivity, epsilon, delta);
         hy.populateFromFile(n, d, filePath);
         // hy.print();

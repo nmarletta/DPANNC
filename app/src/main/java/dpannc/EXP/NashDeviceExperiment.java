@@ -2,6 +2,7 @@ package dpannc.EXP;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
@@ -21,10 +22,10 @@ public class NashDeviceExperiment {
         // exp3();
         // exp4();
         // exp5();
-        exp6();
-        exp7();
+        // exp6();
+        // exp7();
+        exp8();
         // distMap();
-
     }
 
     // Difference in DISTANCE after Nash Device tranformation
@@ -301,8 +302,9 @@ public class NashDeviceExperiment {
 
     public static void exp6() throws Exception {
         DB db = new DB("dpannc");
-        String name = "found";
-        Path filepathTarget = Paths.get("results/nash", name + ".csv");
+        String name = "foundbg";
+        Path filepathTarget = Paths.get("../results/nash", name + ".csv");
+        Files.createDirectories(filepathTarget.getParent());
         try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
             // CSV header
             writer.write("initial distance from q / found vectors\n"); // title
@@ -314,12 +316,13 @@ public class NashDeviceExperiment {
             // settings
             int SEED = 10;
             Random random = new Random(SEED);
-            int n = 200_000; // sample size
+            int n = 100_000; // sample size
             int d = 300; // dimensions
-            int reps = 50;
+            int reps = 10;
 
             // load into database
-            Path filepathSource = Paths.get("resources/fasttext", "dk-300d.txt");
+            Path filepathSource = Paths.get(System.getProperty("user.dir"), "../resources", "fasttext", "dk-300d.txt");
+            System.out.println(filepathSource.toString());
             String table1 = "table1";
             String table2 = "table2";
             db.loadVectorsIntoDB(table1, filepathSource, n, d);
@@ -329,13 +332,14 @@ public class NashDeviceExperiment {
             NashDevice nd = new NashDevice(d, d, random);
             db.applyNashTransform(nd, table2);
 
-            for (double r = 0.1; r < 1.99; r += 0.02) {
+            for (double r = 0.1; r < 1.99; r += 0.05) {
                 // double rPrime = DistMapper.getP95(r);
+
                 double rPrime = DistMapper.getMedian(r);
 
-                double precision = 0;
-                double recall = 0;
-                double f1 = 0;
+                double precisionTotal = 0;
+                double recallTotal = 0;
+                double f1Total = 0;
                 for (int i = 0; i < reps; i++) {
                     Vector q1 = db.getRandomVector(table1, random);
                     Vector q2 = nd.transform(q1);
@@ -350,21 +354,24 @@ public class NashDeviceExperiment {
                     // unionSet.addAll(B);
                     double intersection = intersectionSet.size();
                     // double union = unionSet.size();
-                    // true positive / (true positive + false positive)
-                    precision += (B.size() == 0) ? 0 : (double) intersection / B.size(); 
-                    // true positive / (true positive + false positive)
-                    recall += (A.size() == 0) ? 0 : (double) intersection / A.size(); 
-                    f1 += (precision + recall == 0) ? 0 : 2 * precision * recall / (precision + recall);
+
+                    double precision = (B.size() == 0) ? 0 : (double) intersection / B.size(); // TP / (TP + FP)
+                    double recall = (A.size() == 0) ? 0 : (double) intersection / A.size(); // TP / (TP + FP)
+                    f1Total += (precision + recall == 0) ? 0 : 2 * precision * recall / (precision + recall) / reps;
+                    precisionTotal += precision / reps;
+                    recallTotal += recall / reps;
                 }
                 System.out.println("1: " + r);
                 // write result to file
                 writer.write(String.format(Locale.US, "%.5f,%.5f,%.5f,%.5f\n",
-                r, precision/reps, recall/reps, f1/reps));
+                        r, precisionTotal, recallTotal, f1Total));
+
             }
 
             // metadata
             writer.write("# SEED=" + SEED + ", d=" + d + ", n=" + n + "\n");
             writer.write("# Average taken over: " + reps + " repetions\n");
+            writer.write("# 95th percentile\n");
             writer.write("# Data: " + filepathSource.toString() + "\n");
         } catch (IOException e) {
             System.err.println("Error writing results: " + e.getMessage());
@@ -431,7 +438,7 @@ public class NashDeviceExperiment {
                 System.out.println("2: " + r);
                 // write result to file
                 writer.write(String.format(Locale.US, "%.5f,%.5f,%.5f,%.5f\n",
-                r, intRes.mean(), uniRes.mean(), jacRes.mean()));
+                        r, intRes.mean(), uniRes.mean(), jacRes.mean()));
             }
 
             // metadata
@@ -439,6 +446,66 @@ public class NashDeviceExperiment {
             writer.write("# Average taken over: " + rep + " repetions\n");
             writer.write("# 95 percentile\n");
             writer.write("# Data: " + filepathSource.toString() + "\n");
+        } catch (IOException e) {
+            System.err.println("Error writing results: " + e.getMessage());
+        }
+    }
+
+    // find r for k-nearest neighbours
+    public static void exp8() throws Exception {
+        DB db = new DB("dpannc");
+        String name = "rval";
+        Path filepathTarget = Paths.get("../results/nash", name + ".csv");
+        Files.createDirectories(filepathTarget.getParent());
+        try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
+            // CSV header
+            writer.write("k-nearest neighbours / radius\n"); // title
+            writer.write("0\n"); // coulmns on x-axis
+            writer.write("1,2\n"); // columns on y-axis
+
+            writer.write("neibours,initialRadius,transformedRadius\n"); // coulumns
+
+            // settings
+            int SEED = 10;
+            Random random = new Random(SEED);
+            int n = 100_000; // sample size
+            int d = 300; // dimensions
+            int rep = 20;
+
+            // load into database
+            Path filepathSource = Paths.get(System.getProperty("user.dir"), "../resources", "fasttext", "dk-300d.txt");
+            String table1 = "table1exp8";
+            String table2 = "table2exp8";
+            db.loadVectorsIntoDB(table1, filepathSource, n, d);
+            db.loadVectorsIntoDB(table2, filepathSource, n, d);
+
+            // apply Nash Transform
+            NashDevice nd = new NashDevice(d, d, random);
+            db.applyNashTransform(nd, table2);
+
+            for (int k = 10; k < 1000; k += 50) {
+                Result r1 = new Result();
+                Result r2 = new Result();
+                for (int i = 0; i < rep; i++) {
+                    Vector q1 = db.getRandomVector(table1, random);
+                    Vector q2 = nd.transform(q1);
+                    // calculate distances
+                    Result dists1 = new Result().loadDistancesBetween(q1, table1, db);
+                    Result dists2 = new Result().loadDistancesBetween(q2, table2, db);
+                    r1.add("" + i, dists1.distanceToKNearest(k));
+                    r2.add("" + i, dists2.distanceToKNearest(k));
+                }
+                System.out.println("k: " + k);
+                // write result to file
+                writer.write(String.format(Locale.US, "%d,%.5f,%.5f\n",
+                        k, r1.mean(), r2.mean()));
+            }
+
+            // metadata
+            writer.write("# SEED=" + SEED + ", d=" + d + ", n=" + n + "\n");
+            writer.write("# Average taken over: " + rep + " repetions\n");
+            writer.write("# Data: " + filepathSource.toString() + "\n");
+            System.out.println("Written to file: " + filepathSource.toString());
         } catch (IOException e) {
             System.err.println("Error writing results: " + e.getMessage());
         }
@@ -454,7 +521,7 @@ public class NashDeviceExperiment {
             // CSV header
             writer.write("initial distance / transformed distance distribution\n");
             writer.write("0\n");
-            writer.write("1,2,3,4,5\n"); // median, mean, stddev, p5, p95
+            writer.write("1,2,3,4,5\n");
             writer.write("initial,median,mean,stddev,p5,p95\n");
 
             // settings
@@ -486,8 +553,8 @@ public class NashDeviceExperiment {
                 double median = transformedDists.median();
                 double mean = transformedDists.mean();
                 double msd = transformedDists.stddev();
-                double p5 = transformedDists.quantile(0.05);
-                double p95 = transformedDists.quantile(0.95);
+                double p5 = transformedDists.percentile(0.05);
+                double p95 = transformedDists.percentile(0.95);
 
                 writer.write(String.format(Locale.US, "%.5f,%.5f,%.5f,%.5f,%.5f,%.5f\n",
                         dist, median, mean, msd, p5, p95));

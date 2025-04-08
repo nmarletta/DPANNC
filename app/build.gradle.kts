@@ -39,7 +39,7 @@ java {
 
 application {
     // Define the main class for the application.
-    mainClass = "dp.annc.App"
+    mainClass = "dpannc.EXP.NashDeviceExperiment"
 }
 
 tasks.named<Test>("test") {

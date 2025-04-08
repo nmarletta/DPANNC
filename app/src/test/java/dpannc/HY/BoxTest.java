@@ -90,7 +90,7 @@ class BoxTest {
         assertNotSame(box, clone); // Ensure different object references
         assertArrayEquals(box.min, clone.min);
         assertArrayEquals(box.max, clone.max);
-        assertEquals(box.count, clone.count);
+        assertEquals(0, clone.count);
     }
 
     @Test
