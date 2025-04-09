@@ -263,13 +263,15 @@ public class HY {
     }
 
     public Collection<Vector> loadfile(int n, Path filepath) {
-        Collection<Vector> data = new ArrayList<Vector>();
+        Collection<Vector> vectors = new ArrayList<Vector>();
         try (BufferedReader reader = new BufferedReader(new FileReader(filepath.toAbsolutePath().toString()))) {
             String line;
             int counter = 0;
             while ((line = reader.readLine()) != null && counter < n) {
-                Vector vector = Vector.fromString(line);
-                data.add(vector);
+                String label = line.substring(0, line.indexOf(' '));
+                String data = line.substring(line.indexOf(' ') + 1);
+                Vector vector = Vector.fromString(label, data);
+                vectors.add(vector);
                 // printProgress(counter, n, 10);
                 counter++;
             }
@@ -278,6 +280,6 @@ public class HY {
             e.printStackTrace();
         }
         System.out.println("Vectors loaded...");
-        return data;
+        return vectors;
     }
 }

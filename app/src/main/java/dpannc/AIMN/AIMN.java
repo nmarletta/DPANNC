@@ -81,11 +81,14 @@ public class AIMN {
             String line;
             int counter = 0;
             while ((line = reader.readLine()) != null && counter < n) {
-                Vector vector = Vector.fromString(line);
+                String label = line.substring(0, line.indexOf(' '));
+                String data = line.substring(line.indexOf(' ') + 1);
+                Vector vector = Vector.fromString(label, data);
                 root.insertPoint(vector);
                 printProgress(counter, n, 10);
                 counter++;
-            }
+            }  
+
             if (DP)
                 addNoise();
         } catch (IOException e) {

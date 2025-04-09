@@ -1,5 +1,6 @@
 package dpannc;
 
+import java.util.Arrays;
 import java.util.Random;
 
 public class Vector {
@@ -383,6 +384,19 @@ public class Vector {
     }
 
     /**
+     * Returns a string representation of the vector.
+     *
+     * @return a string containing the vector components.
+     */
+    public String dataString() {
+        String s = "" + components[0];
+        for (int i = 0; i < components.length; i++) {
+            s += " " + components[i];
+        }
+        return s;
+    }
+
+    /**
      * Prints the vector to the standard output.
      */
     public void print() {
@@ -394,13 +408,10 @@ public class Vector {
      *
      * @return a Vector object with the .
      */
-    public static Vector fromString(String str) {
-        String[] split = str.split(" ");
-        String label = split[0];
-        double[] components = new double[split.length-1];
-        for (int i = 0; i < components.length; i++) {
-            components[i] = Double.parseDouble(split[i+1]);
-        }
-        return new Vector(components).setLabel(label);
-    }
+    public static Vector fromString(String label, String data) {
+    double[] components = Arrays.stream(data.split(" "))
+                                .mapToDouble(Double::parseDouble)
+                                .toArray();
+    return new Vector(components).setLabel(label);
+}
 }

@@ -2,6 +2,7 @@
 .gradle/
 **/build/
 **/resources/
+**/results/
 *.bin
 *.lock
 *.class

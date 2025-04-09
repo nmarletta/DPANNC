@@ -10,8 +10,9 @@ import java.util.Random;
 public class VectorTest {
     @Test
     void testFromString() {
-        String str = "label 0.1234 -0.1231 1.2314";
-        Vector v = Vector.fromString(str);
+        String label = "label";
+        String data = "0.1234 -0.1231 1.2314";
+        Vector v = Vector.fromString(label, data);
 
         assertEquals("label", v.getLabel());
 

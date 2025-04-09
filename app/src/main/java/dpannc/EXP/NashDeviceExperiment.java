@@ -16,12 +16,14 @@ import dpannc.Vector;
 import dpannc.database.DB;
 
 public class NashDeviceExperiment {
+    static Path root = Paths.get(System.getProperty("user.dir"));
+
     public static void main(String[] args) throws Exception {
-        exp1();
+        // exp1();
         exp2();
-        exp3();
-        exp4();
-        exp5();
+        // exp3();
+        // exp4();
+        // exp5();
         // exp6();
         // exp7();
         // exp8();
@@ -32,9 +34,11 @@ public class NashDeviceExperiment {
     public static void exp1() throws Exception {
         DB db = new DB("dpannc");
 
-        String name = "dist_diff";
-        Path filepathTarget = Paths.get("../results/nash", name + ".csv");
-        try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
+        try {
+            String name = "dist_diff";
+            Path filepathTarget = Paths.get("src/main/results/nash", name + ".csv").toAbsolutePath();
+            Files.createDirectories(filepathTarget.getParent());
+            FileWriter writer = new FileWriter(filepathTarget.toString());
             // CSV header
             writer.write("distance from q / difference after transformation\n"); // title
             writer.write("0\n"); // coulmns on x-axis
@@ -86,9 +90,10 @@ public class NashDeviceExperiment {
     public static void exp2() throws Exception {
         DB db = new DB("dpannc");
 
-        String name = "dist_trans";
-        Path filepathTarget = Paths.get("../results/nash", name + ".csv");
-        try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
+        try {
+            String name = "dist_trans";
+            Path filepathTarget = root.resolve("results/nash/" + name + ".csv");
+            FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString());
             // CSV header
             writer.write("initial distance / transformed distance\n"); // title
             writer.write("0\n"); // coulmns on x-axis
@@ -131,8 +136,8 @@ public class NashDeviceExperiment {
             writer.write("# SEED=" + SEED + ", d=" + d + ", n=" + n + "\n");
             writer.write("# Magnitude of vectors after transformation: " + 1 + "\n");
 
-        } catch (IOException e) {
-            System.err.println("Error writing results: " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -140,9 +145,10 @@ public class NashDeviceExperiment {
     public static void exp3() throws Exception {
         DB db = new DB("dpannc");
 
-        String name = "dot_diff";
-        Path filepathTarget = Paths.get("../results/nash", name + ".csv");
-        try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
+        try {
+            String name = "dot_diff";
+            Path filepathTarget = root.resolve("results/nash/" + name + ".csv");
+            FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString());
             // CSV header
             writer.write("dot-product / difference after transformation\n"); // title
             writer.write("0\n"); // coulmns on x-axis
@@ -194,9 +200,10 @@ public class NashDeviceExperiment {
     public static void exp4() throws Exception {
         DB db = new DB("dpannc");
 
-        String name = "dot_trans";
-        Path filepathTarget = Paths.get("../results/nash", name + ".csv");
-        try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
+        try {
+            String name = "dot_trans";
+            Path filepathTarget = root.resolve("results/nash/" + name + ".csv");
+            FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString());
             // CSV header
             writer.write("initial dot-product / transformed dot-product\n"); // title
             writer.write("0\n"); // coulmns on x-axis
@@ -249,9 +256,10 @@ public class NashDeviceExperiment {
     public static void exp5() throws Exception {
         DB db = new DB("dpannc");
 
-        String name = "distdot_trans";
-        Path filepathTarget = Paths.get("../results/nash", name + ".csv");
-        try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
+        try {
+            String name = "distdot_trans";
+            Path filepathTarget = root.resolve("results/nash/" + name + ".csv");
+            FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString());
             // CSV header
             writer.write("initial distance / transformed dot-product\n"); // title
             writer.write("0\n"); // coulmns on x-axis
@@ -302,10 +310,11 @@ public class NashDeviceExperiment {
 
     public static void exp6() throws Exception {
         DB db = new DB("dpannc6");
-        String name = "foundbg";
-        Path filepathTarget = Paths.get("../results/nash", name + ".csv");
-        Files.createDirectories(filepathTarget.getParent());
-        try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
+
+        try {
+            String name = "foundbg";
+            Path filepathTarget = root.resolve("results/nash/" + name + ".csv");
+            FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString());
             // CSV header
             writer.write("initial distance from q / found vectors\n"); // title
             writer.write("0\n"); // coulmns on x-axis
@@ -389,7 +398,7 @@ public class NashDeviceExperiment {
     public static void exp7() throws Exception {
         DB db = new DB("dpannc7");
         String name = "found";
-        Path filepathTarget = Paths.get("../results/nash", name + ".csv");
+        Path filepathTarget = root.resolve("results/nash/" + name + ".csv");
         try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
             // CSV header
             writer.write("distance from q / similarity of found points\n"); // title
@@ -461,10 +470,11 @@ public class NashDeviceExperiment {
     // find r for k-nearest neighbours
     public static void exp8() throws Exception {
         DB db = new DB("dpannc8");
-        String name = "rval";
-        Path filepathTarget = Paths.get("../results/nash", name + ".csv");
-        Files.createDirectories(filepathTarget.getParent());
-        try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
+
+        try {
+            String name = "rval";
+            Path filepathTarget = root.resolve("results/nash/" + name + ".csv");
+            FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString());
             // CSV header
             writer.write("k-nearest neighbours / radius\n"); // title
             writer.write("0\n"); // coulmns on x-axis
@@ -522,9 +532,10 @@ public class NashDeviceExperiment {
     public static void distMap() throws Exception {
         DB db = new DB("dpannc");
 
-        String name = "dist_map";
-        Path filepathTarget = Paths.get("results/nash", name + ".csv");
-        try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
+        try {
+            String name = "dist_map";
+            Path filepathTarget = root.resolve("results/nash/" + name + ".csv");
+            FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString());
             // CSV header
             writer.write("initial distance / transformed distance distribution\n");
             writer.write("0\n");

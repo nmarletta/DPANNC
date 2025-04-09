@@ -4,6 +4,7 @@ import java.io.*;
 import java.nio.file.Path;
 import java.sql.*;
 import java.util.*;
+import java.util.function.Function;
 
 import dpannc.NashDevice;
 import dpannc.Vector;
@@ -20,13 +21,14 @@ public class DB {
 
         // drop all existing tables
         // try (Statement stmt = conn.createStatement();
-        //         ResultSet rs = stmt.executeQuery("SELECT name FROM sqlite_master WHERE type='table'")) {
-        //     while (rs.next()) {
-        //         String tableName = rs.getString("name");
-        //         if (!tableName.equals("sqlite_sequence")) {
-        //             stmt.execute("DROP TABLE IF EXISTS " + tableName);
-        //         }
-        //     }
+        // ResultSet rs = stmt.executeQuery("SELECT name FROM sqlite_master WHERE
+        // type='table'")) {
+        // while (rs.next()) {
+        // String tableName = rs.getString("name");
+        // if (!tableName.equals("sqlite_sequence")) {
+        // stmt.execute("DROP TABLE IF EXISTS " + tableName);
+        // }
+        // }
         // }
     }
 
@@ -45,16 +47,16 @@ public class DB {
             String line;
             int counter = 0;
             while ((line = reader.readLine()) != null && counter < n) {
-                String[] tokens = line.trim().split("\\s+");
-                if (tokens.length != d + 1) {
+                String label = line.substring(0, line.indexOf(' '));
+                String data = line.substring(line.indexOf(' ') + 1);
+
+                if (data.split(" ").length != d) {
                     System.err.println("Skipping malformed line: " + line);
                     continue;
                 }
 
-                String label = tokens[0];
-                
                 stmt.setString(1, label);
-                stmt.setString(2, line);
+                stmt.setString(2, data);
                 stmt.addBatch();
                 counter++;
             }
@@ -72,7 +74,7 @@ public class DB {
         }
 
         try (PreparedStatement stmt = conn
-                        .prepareStatement("INSERT INTO " + table + "(label, data) VALUES (?, ?)")) {
+                .prepareStatement("INSERT INTO " + table + "(label, data) VALUES (?, ?)")) {
 
             for (Result.Element e : result.get()) {
                 String label = e.label;
@@ -91,8 +93,9 @@ public class DB {
         try (PreparedStatement stmt = conn.prepareStatement(query)) {
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
+                String label = rs.getString("label");
                 String data = rs.getString("data");
-                vectors.add(Vector.fromString(data));
+                vectors.add(Vector.fromString(label, data));
             }
         }
         return vectors;
@@ -105,7 +108,7 @@ public class DB {
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 String data = rs.getString("data");
-                return Vector.fromString(data);
+                return Vector.fromString(label, data);
             } else {
                 return null;
             }
@@ -131,7 +134,7 @@ public class DB {
             stmt.setInt(1, offset);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
-                return Vector.fromString(rs.getString("data"));
+                return Vector.fromString(rs.getString("label"), rs.getString("data"));
             } else {
                 System.out.println("null");
                 return null;
@@ -151,7 +154,7 @@ public class DB {
             while (rs.next()) {
                 String label = rs.getString("label");
                 String data = rs.getString("data");
-                Vector original = Vector.fromString(data);
+                Vector original = Vector.fromString(label, data);
 
                 Vector transformed = nd.transform(original);
 
@@ -169,6 +172,38 @@ public class DB {
             System.out.println("Applied Nash transform to " + counter + " vectors in table '" + table + "'");
         }
     }
+
+    public void applyTransformation(Function<String, String> transformer, String table) throws SQLException {
+        String selectQuery = "SELECT label, data FROM " + table;
+        String updateQuery = "UPDATE " + table + " SET data = ? WHERE label = ?";
+    
+        try (
+            PreparedStatement selectStmt = conn.prepareStatement(selectQuery);
+            PreparedStatement updateStmt = conn.prepareStatement(updateQuery);
+            ResultSet rs = selectStmt.executeQuery()
+        ) {
+            int counter = 0;
+            while (rs.next()) {
+                String label = rs.getString("label");
+                String data = rs.getString("data");
+    
+                String transformed = transformer.apply(data);
+    
+                updateStmt.setString(1, transformed);
+                updateStmt.setString(2, label);
+                updateStmt.addBatch();
+    
+                counter++;
+                if (counter % 100 == 0) {
+                    updateStmt.executeBatch();
+                }
+            }
+            updateStmt.executeBatch();
+            System.out.println("Applied string transformation to " + counter + " entries in table '" + table + "'");
+        }
+    }
+    
+    
 
     public void dropTable(String table) throws SQLException {
         try (Statement stmt = conn.createStatement();) {
