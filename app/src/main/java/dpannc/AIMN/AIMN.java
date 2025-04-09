@@ -24,7 +24,7 @@ public class AIMN {
 
     Random random = new Random(100);
     Noise noise = new Noise(100);
-    boolean DP = false;
+    boolean DP = true;
 
     Map<String, Vector> nodes; // ID (path) -> gaussian vectors
     Map<String, List<String>> buckets; // ID (path) -> list of vectors
@@ -32,13 +32,14 @@ public class AIMN {
     List<String> remainderBucket; // for vectors that are not assigned a node
     List<String> query; // for returning result of a query
 
-    public AIMN(int n, int d, double c, double sensitivity, double epsilon, double delta) {
+    public AIMN(int n, int d, double r, double c, double sensitivity, double epsilon, double delta) {
         remainder = 0;
         this.n = n;
         this.d = d;
         this.c = c;
+        this.r = r;
+        // r = 1 / Math.pow(log(n, 10), 1.0 / 8.0);
         lambda = (2 * Math.sqrt(2 * c)) / (c * c + 1);
-        r = 1 / Math.pow(log(n, 10), 1.0 / 8.0);
         K = Math.sqrt(ln(n));
         alpha = 1 - ((r * r) / 2); // cosine
         beta = Math.sqrt(1 - (alpha * alpha)); // sine
@@ -46,7 +47,7 @@ public class AIMN {
         threshold = (adjSen / epsilon) * ln(1 + (Math.exp(epsilon / 2) - 1) / delta);
         etaU = Math.sqrt((ln(n) / K)) * (lambda / r);
         etaQ = alpha * etaU - 2 * beta * Math.sqrt(ln(K));
-        T = (int) (10 * ln(K) / F(etaU));
+        T = (int) (10 * ln(K) / (Math.exp(-Math.pow(n, 2)/2)));
         root = new Node(0, "0");
         printSettings();
 
@@ -129,6 +130,10 @@ public class AIMN {
 
     public double getR() {
         return r;
+    }
+
+    public void DP(boolean b) {
+        DP = b;
     }
 
     private void printProgress(int c, int n, int step) {
@@ -263,28 +268,5 @@ public class AIMN {
         public int count() {
             return count;
         }
-    }
-
-    public static double F(double eta) {
-        return 0.5 * erfc(eta / Math.sqrt(2));
-    }
-    
-    public static double erfc(double x) {
-        // Abramowitz and Stegun approximation
-        double z = Math.abs(x);
-        double t = 1.0 / (1.0 + 0.5 * z);
-    
-        double r = t * Math.exp(-z*z - 1.26551223 +
-                                t * (1.00002368 +
-                                t * (0.37409196 +
-                                t * (0.09678418 +
-                                t * (-0.18628806 +
-                                t * (0.27886807 +
-                                t * (-1.13520398 +
-                                t * (1.48851587 +
-                                t * (-0.82215223 +
-                                t * 0.17087277)))))))));                            
-    
-        return (x >= 0.0) ? r : 2.0 - r;
     }
 }

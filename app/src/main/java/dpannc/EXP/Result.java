@@ -115,6 +115,30 @@ public class Result {
         return result;
     }
 
+    public Set<String> within(double min, double max) {
+        if (min <= 0 || max <= min)
+            throw new IllegalArgumentException("min or max not set correctly");
+        Set<String> result = new HashSet<String>();
+        int count = 0;
+        for (Element e : list) {
+            if (e.value > min && e.value < max)
+                result.add(e.label);
+        }
+        return result;
+    }
+
+    public Set<String> greaterThan(double val) {
+        if (val <= 0)
+            throw new IllegalArgumentException("r cannot be less or equal to 0");
+        Set<String> result = new HashSet<String>();
+        int count = 0;
+        for (Element e : list) {
+            if (e.value >= val)
+                result.add(e.label);
+        }
+        return result;
+    }
+
     public int amountGreaterThan(double val) {
         if (val <= 0)
             throw new IllegalArgumentException("r cannot be less or equal to 0");

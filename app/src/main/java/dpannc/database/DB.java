@@ -19,15 +19,15 @@ public class DB {
         this.conn = DriverManager.getConnection(dbUrl);
 
         // drop all existing tables
-        try (Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery("SELECT name FROM sqlite_master WHERE type='table'")) {
-            while (rs.next()) {
-                String tableName = rs.getString("name");
-                if (!tableName.equals("sqlite_sequence")) {
-                    stmt.execute("DROP TABLE IF EXISTS " + tableName);
-                }
-            }
-        }
+        // try (Statement stmt = conn.createStatement();
+        //         ResultSet rs = stmt.executeQuery("SELECT name FROM sqlite_master WHERE type='table'")) {
+        //     while (rs.next()) {
+        //         String tableName = rs.getString("name");
+        //         if (!tableName.equals("sqlite_sequence")) {
+        //             stmt.execute("DROP TABLE IF EXISTS " + tableName);
+        //         }
+        //     }
+        // }
     }
 
     public void loadVectorsIntoDB(String table, Path filePath, int n, int d) throws SQLException, IOException {
@@ -52,6 +52,7 @@ public class DB {
                 }
 
                 String label = tokens[0];
+                
                 stmt.setString(1, label);
                 stmt.setString(2, line);
                 stmt.addBatch();

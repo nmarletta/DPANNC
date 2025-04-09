@@ -21,7 +21,7 @@ public class Runner {
         double c = 1.1;
         Path filePath = Paths.get("resources", "generated", d + "D_" + n + ".txt");
         DataGenerator.generateRandom(filePath, d, n, 10, random);
-        AIMN AIMN = new AIMN(n, d, c, sensitivity, epsilon, delta);
+        AIMN AIMN = new AIMN(n, d, 1, c, sensitivity, epsilon, delta);
         AIMN.populateFromFile(n, d, filePath);
 
         // Vector q = new Vector(new double[] {0, 0, 0});
