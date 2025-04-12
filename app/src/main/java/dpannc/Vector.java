@@ -71,15 +71,16 @@ public class Vector {
     }
 
     /**
-     * Populates the vector with random values uniformly distributed within some range.
+     * Populates the vector with random values uniformly distributed within some
+     * range.
      *
      * @param random the random object
-     * @param range the range each component can be
+     * @param range  the range each component can be
      * @return the updated vector with random Gaussian values.
      */
     public Vector random(Random random, double range) {
         for (int c = 0; c < components.length; c++) {
-            this.components[c] = random.nextDouble() * range - (range/2);
+            this.components[c] = random.nextDouble() * range - (range / 2);
         }
         return this;
     }
@@ -123,6 +124,9 @@ public class Vector {
      */
     public Vector normalize() {
         double mag = this.magnitude();
+        if (mag == 0) {
+            return this;
+        }
         return this.divide(mag);
     }
 
@@ -147,6 +151,9 @@ public class Vector {
      * @return the updated vector.
      */
     public Vector setMagnitude(double len) {
+        if (magnitude() == 0) {
+            return this;
+        }
         this.normalize();
         this.multiply(len);
         return this;
@@ -240,7 +247,8 @@ public class Vector {
      */
     public double dot(Vector v) {
         if (this.dimensionality() != v.dimensionality()) {
-            throw new IllegalArgumentException("Vectors must have the same dimension for dot product. Vectors: " + this.label + " and " + v.getLabel());
+            throw new IllegalArgumentException("Vectors must have the same dimension for dot product. Vectors: "
+                    + this.label + " and " + v.getLabel());
         }
         double product = 0.0f;
         for (int c = 0; c < components.length; c++) {
@@ -260,7 +268,8 @@ public class Vector {
     public double distance(Vector v) {
         if (this.dimensionality() != v.dimensionality()) {
             throw new IllegalArgumentException(
-                    "Vectors must have the same dimension for Euclidean distance calculation");
+                    "Vectors must have the same dimension for Euclidean distance calculation: " + this.dimensionality()
+                            + " != " + v.dimensionality());
         }
 
         double sum = 0.0;
@@ -292,49 +301,47 @@ public class Vector {
 
     // @Override
     // public int hashCode() {
-    //     return label != null ? label.hashCode() : 0;
+    // return label != null ? label.hashCode() : 0;
     // }
 
     // @Override
     // public boolean equals(Object obj) {
-    //     if (this == obj)
-    //         return true; // Same object reference
-    //     if (obj == null || getClass() != obj.getClass())
-    //         return false; // Ensure type match
+    // if (this == obj)
+    // return true; // Same object reference
+    // if (obj == null || getClass() != obj.getClass())
+    // return false; // Ensure type match
 
-    //     Vector vector = (Vector) obj;
-    //     return label != null ? label.equals(vector.label) : vector.label == null;
+    // Vector vector = (Vector) obj;
+    // return label != null ? label.equals(vector.label) : vector.label == null;
     // }
-
-
 
     // https://extremelearning.com.au/how-to-generate-uniformly-random-points-on-n-spheres-and-n-balls/
     public Vector sampleOnSphere(double r, Random random) {
         int d = this.dimensionality();
         double mag = this.magnitude(); // radius of the sphere that q lies on
         double diameter = 2 * mag; // diameter of sphere / max distance two points can be from each other
-    
+
         if (r < 0 || r > diameter)
             throw new IllegalArgumentException("r must be in [0, " + diameter + "]");
-    
+
         double theta = 2 * Math.asin(r / diameter);
-    
+
         // normalize input vector to get direction
-        Vector vUnit = this.clone().divide(mag); 
-    
+        Vector vUnit = this.clone().divide(mag);
+
         // sample a random vector
         Vector z = new Vector(d).randomGaussian(random);
-    
+
         // project z orthogonal to vUnit: w = z - (z·v)v
         Vector projection = vUnit.clone().multiply(z.dot(vUnit));
         Vector w = z.clone().subtract(projection);
         w.normalize();
-    
+
         // rotate around sphere
         Vector vPart = vUnit.clone().multiply(Math.cos(theta));
         Vector wPart = w.clone().multiply(Math.sin(theta));
         Vector result = vPart.add(wPart);
-    
+
         // scale back to original magnitude
         return result.multiply(mag);
     }
@@ -346,17 +353,17 @@ public class Vector {
     public Vector sampleWithDot(double targetDot, Random random) {
         Vector q = this.clone();
         double qNormSq = q.dot(q);
-    
+
         // Base vector in the direction of q that satisfies dot(q, base) = targetDot
         Vector base = q.clone().multiply(targetDot / qNormSq);
-    
+
         // Generate a random Gaussian vector
         Vector r = new Vector(q.dimensionality()).randomGaussian(random);
-    
+
         // Project r orthogonally to q
         double projectionScale = q.dot(r) / qNormSq;
         Vector projection = q.clone().multiply(projectionScale);
-        Vector rPerp = r.subtract(projection);  // Now rPerp ⋅ q == 0
+        Vector rPerp = r.subtract(projection); // Now rPerp ⋅ q == 0
         // Final vector
         return base.add(rPerp);
     }
@@ -390,7 +397,7 @@ public class Vector {
      */
     public String dataString() {
         String s = "" + components[0];
-        for (int i = 0; i < components.length; i++) {
+        for (int i = 1; i < components.length; i++) {
             s += " " + components[i];
         }
         return s;
@@ -409,9 +416,9 @@ public class Vector {
      * @return a Vector object with the .
      */
     public static Vector fromString(String label, String data) {
-    double[] components = Arrays.stream(data.split(" "))
-                                .mapToDouble(Double::parseDouble)
-                                .toArray();
-    return new Vector(components).setLabel(label);
-}
+        double[] components = Arrays.stream(data.split(" "))
+                .mapToDouble(Double::parseDouble)
+                .toArray();
+        return new Vector(components).setLabel(label);
+    }
 }

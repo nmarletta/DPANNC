@@ -18,7 +18,7 @@ public class Result {
         list = new ArrayList<Element>();
     }
 
-    public Result loadDistancesBetween(Vector q, Collection<String> vectors, String table, DB db) throws SQLException {
+    public Result loadDistancesBetween(Vector q, Collection<String> vectors, String table, DB db) throws Exception {
         list = new ArrayList<Element>();
         for (String label : vectors) {
             Vector v = db.getVectorByLabel(label, table);
@@ -45,7 +45,7 @@ public class Result {
         return this;
     }
 
-    public Result loadDotProductBetween(Vector q, Collection<String> vectors, String table, DB db) throws SQLException {
+    public Result loadDotProductBetween(Vector q, Collection<String> vectors, String table, DB db) throws Exception {
         list = new ArrayList<Element>();
         for (String label : vectors) {
             Vector v = db.getVectorByLabel(label, table);

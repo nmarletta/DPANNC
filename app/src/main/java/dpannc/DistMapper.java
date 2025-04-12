@@ -24,7 +24,8 @@ public class DistMapper {
 
     static {
         try {
-            Path path = Paths.get(System.getProperty("user.dir"), "../results", "nash", "dist_map.csv");
+            String name = "dist_map";
+            Path path = Paths.get("app/results/nash/" + name + ".csv");
             loadFromCSV(path.toString());
         } catch (IOException e) {
             System.err.println("Failed to initialize DistMapper: " + e.getMessage());
@@ -106,7 +107,7 @@ public class DistMapper {
         DB db = new DB("dpannc");
 
         String name = "mapper";
-        Path filepathTarget = Paths.get("results/nash", name + ".csv");
+        Path filepathTarget = Paths.get("results/nash/" + name + ".csv");
         try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
             // CSV header
             writer.write("initial distance value / mapped values from DistMapper\n");

@@ -11,13 +11,17 @@ import dpannc.Vector;
 import dpannc.EXP.Result;
 
 public class DB {
-    private final String dbUrl;
-    private final Connection conn;
+    private String dbUrl;
+    private Connection conn;
 
-    public DB(String dbFilename) throws SQLException, ClassNotFoundException {
-        this.dbUrl = "jdbc:sqlite:" + dbFilename + ".db";
-        Class.forName("org.sqlite.JDBC");
-        this.conn = DriverManager.getConnection(dbUrl);
+    public DB(String dbFilename) {
+        try {
+            this.dbUrl = "jdbc:sqlite:" + dbFilename + ".db";
+            Class.forName("org.sqlite.JDBC");
+            this.conn = DriverManager.getConnection(dbUrl);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         // drop all existing tables
         // try (Statement stmt = conn.createStatement();
@@ -50,18 +54,27 @@ public class DB {
                 String label = line.substring(0, line.indexOf(' '));
                 String data = line.substring(line.indexOf(' ') + 1);
 
-                if (data.split(" ").length != d) {
+                String[] tokens = data.split(" ");
+                if (tokens.length != d) {
                     System.err.println("Skipping malformed line: " + line);
                     continue;
                 }
 
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < tokens.length; i++) {
+                    double value = Double.parseDouble(tokens[i]);
+                    sb.append(value);
+                    if (i != tokens.length - 1) 
+                        sb.append(" ");
+                }
+
                 stmt.setString(1, label);
-                stmt.setString(2, data);
+                stmt.setString(2, sb.toString());
                 stmt.addBatch();
                 counter++;
             }
             stmt.executeBatch();
-            System.out.println("Vectors loaded into DB table '" + table + "'");
+            System.out.println(counter + " vectors loaded into DB table '" + table + "'");
         }
     }
 
@@ -89,7 +102,7 @@ public class DB {
 
     public List<Vector> loadVectorsFromDB(String table) throws SQLException {
         List<Vector> vectors = new ArrayList<>();
-        String query = "SELECT data FROM " + table;
+        String query = "SELECT label, data FROM " + table;
         try (PreparedStatement stmt = conn.prepareStatement(query)) {
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
@@ -101,7 +114,7 @@ public class DB {
         return vectors;
     }
 
-    public Vector getVectorByLabel(String label, String table) throws SQLException {
+    public Vector getVectorByLabel(String label, String table) throws Exception {
         String query = "SELECT data FROM " + table + " WHERE label = ?";
         try (PreparedStatement stmt = conn.prepareStatement(query)) {
             stmt.setString(1, label);
@@ -110,7 +123,7 @@ public class DB {
                 String data = rs.getString("data");
                 return Vector.fromString(label, data);
             } else {
-                return null;
+                throw new Exception(label + " not found in table " + table);
             }
         }
     }
@@ -129,7 +142,7 @@ public class DB {
             return null;
 
         int offset = random.nextInt(rowCount);
-        String query = "SELECT data FROM " + table + " LIMIT 1 OFFSET ?";
+        String query = "SELECT label, data FROM " + table + " LIMIT 1 OFFSET ?";
         try (PreparedStatement stmt = conn.prepareStatement(query)) {
             stmt.setInt(1, offset);
             ResultSet rs = stmt.executeQuery();
@@ -155,11 +168,11 @@ public class DB {
                 String label = rs.getString("label");
                 String data = rs.getString("data");
                 Vector original = Vector.fromString(label, data);
-
                 Vector transformed = nd.transform(original);
+                System.out.println("O: " + original.dimensionality() + ", t: " + transformed.dimensionality());
 
                 // update the database
-                updateStmt.setString(1, transformed.toString());
+                updateStmt.setString(1, transformed.dataString());
                 updateStmt.setString(2, label);
                 updateStmt.addBatch();
 
@@ -176,34 +189,29 @@ public class DB {
     public void applyTransformation(Function<String, String> transformer, String table) throws SQLException {
         String selectQuery = "SELECT label, data FROM " + table;
         String updateQuery = "UPDATE " + table + " SET data = ? WHERE label = ?";
-    
+
         try (
-            PreparedStatement selectStmt = conn.prepareStatement(selectQuery);
-            PreparedStatement updateStmt = conn.prepareStatement(updateQuery);
-            ResultSet rs = selectStmt.executeQuery()
-        ) {
+                PreparedStatement selectStmt = conn.prepareStatement(selectQuery);
+                PreparedStatement updateStmt = conn.prepareStatement(updateQuery);
+                ResultSet rs = selectStmt.executeQuery()) {
             int counter = 0;
             while (rs.next()) {
                 String label = rs.getString("label");
                 String data = rs.getString("data");
-    
                 String transformed = transformer.apply(data);
-    
                 updateStmt.setString(1, transformed);
                 updateStmt.setString(2, label);
                 updateStmt.addBatch();
-    
+
                 counter++;
                 if (counter % 100 == 0) {
                     updateStmt.executeBatch();
                 }
             }
             updateStmt.executeBatch();
-            System.out.println("Applied string transformation to " + counter + " entries in table '" + table + "'");
+            System.out.println("Applied data transformation to " + counter + " entries in table '" + table + "'");
         }
     }
-    
-    
 
     public void dropTable(String table) throws SQLException {
         try (Statement stmt = conn.createStatement();) {

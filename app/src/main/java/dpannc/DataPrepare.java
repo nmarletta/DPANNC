@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 public class DataPrepare {
     public static void main(String[] args) {
-
+        MNISTcsv2txt();
         //// divide each component in each vector by something
             // db.applyTransformation(str -> {
             //     String transformed = Arrays.stream(str.split(" "))
@@ -22,20 +22,19 @@ public class DataPrepare {
             //     return transformed;
             // }, table1);
 
-            removeFirstLine();
+            // removeFirstLine();
         
     }
 
     public static void MNISTcsv2txt() {
-        String nameSource = "fashion-mnist_train";
-        Path filepathSource = Paths.get("resources/FashionMNIST", nameSource + ".csv");
+        String nameSource = "fashionMNIST_60K_784D";
         String nameTarget = nameSource;
-        Path filepathTarget = Paths.get("resources/FashionMNIST", nameTarget + ".txt");
+        Path filepathSource = Paths.get("app/resources/FashionMNIST", nameSource + ".csv");
+        Path filepathTarget = Paths.get("app/resources/FashionMNIST", nameTarget + ".txt");
         String[] label = new String[]{"Top", "Trouser", "Pullover", "Dress", "Coat", "Sandal", "Shirt", "Sneaker", "Bag", "Boot"};
         int[] id = new int[10];
         try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString());
         BufferedReader reader = new BufferedReader(new FileReader(filepathSource.toFile()))) {
-            reader.readLine();
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] tokens = line.split(",");
@@ -53,8 +52,8 @@ public class DataPrepare {
     public static void removeFirstLine() {
         String nameSource = "english_2M_300D";
         String nameTarget = nameSource + "s";
-        Path filepathSource = Paths.get("app/src/main/resources/fasttext", nameSource + ".txt").toAbsolutePath();
-        Path filepathTarget = Paths.get("app/src/main/resources/fasttext", nameTarget + ".txt").toAbsolutePath();
+        Path filepathSource = Paths.get("app/resources/fasttext", nameSource + ".txt");
+        Path filepathTarget = Paths.get("app/resources/fasttext", nameTarget + ".txt");
         try {
             Files.createDirectories(filepathTarget.getParent());
             FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString());

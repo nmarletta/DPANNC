@@ -20,48 +20,6 @@ public class NashDevice {
         }
     }
 
-    // /**
-    //  * applies 'Randomized Nash Device' embedding to a high-dimensional vector
-    //  * https://people.eecs.berkeley.edu/~brecht/papers/07.rah.rec.nips.pdf
-    //  * @param x high-dimensional vector
-    //  * @return transformed d'-dimensional vector
-    //  */
-    // public Vector transform(Vector x) {
-    //     double[] transformedComponents = new double[dPrime];
-
-    //     int i = 0;
-    //     int g = 0;
-    //     while (i < dPrime) {
-    //         double dotProduct = randomGaussians.get(g++).dot(x);
-    //         transformedComponents[i++] = Math.sqrt(2.0 / dPrime) * Math.cos(sigma * dotProduct);
-    //         if (i < dPrime) {
-    //             transformedComponents[i++] = Math.sqrt(2.0 / dPrime) * Math.sin(sigma * dotProduct);
-    //         }
-    //     }
-    //     return new Vector(transformedComponents).setLabel(x.getLabel());
-    // }
-
-    // /**
-    //  * applies 'Randomized Nash Device' embedding to a high-dimensional vector
-    //  * 
-    //  * @param x high-dimensional vector
-    //  * @return transformed d'-dimensional vector
-    //  */
-    // public Vector transform(Vector x) {
-    //     double[] transformedComponents = new double[dPrime];
-
-    //     int i = 0;
-    //     int g = 0;
-    //     while (i < dPrime) {
-    //         double dotProduct = randomGaussians.get(g++).dot(x);
-    //         transformedComponents[i++] = 1.0 / sigma * Math.cos(sigma * dotProduct);
-    //         if (i < dPrime) {
-    //             transformedComponents[i++] = 1.0 / sigma * Math.sin(sigma * dotProduct);
-    //         }
-    //     }
-    //     return new Vector(transformedComponents).normalize().setLabel(x.getLabel());
-    // }
-
     public Vector transform(Vector x) {
         double[] transformedComponents = new double[dPrime];
     

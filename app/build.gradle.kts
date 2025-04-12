@@ -47,6 +47,11 @@ tasks.named<Test>("test") {
     useJUnitPlatform()
 }
 
+tasks.named<JavaExec>("run") {
+    // Force working directory to be the project root
+    systemProperty("user.dir", rootProject.projectDir.toString())
+}
+
 // sourceSets {
 //     main {
 //         resources {
