@@ -6,9 +6,7 @@ import java.sql.*;
 import java.util.*;
 import java.util.function.Function;
 
-import dpannc.NashDevice;
 import dpannc.Vector;
-import dpannc.EXP.Result;
 
 public class DB {
     private String dbUrl;
@@ -23,25 +21,36 @@ public class DB {
             e.printStackTrace();
         }
 
-        // drop all existing tables
+        // // drop all existing tables
         // try (Statement stmt = conn.createStatement();
-        // ResultSet rs = stmt.executeQuery("SELECT name FROM sqlite_master WHERE
-        // type='table'")) {
-        // while (rs.next()) {
-        // String tableName = rs.getString("name");
-        // if (!tableName.equals("sqlite_sequence")) {
-        // stmt.execute("DROP TABLE IF EXISTS " + tableName);
+        //         ResultSet rs = stmt.executeQuery("SELECT name FROM sqlite_master WHERE type='table'")) {
+        //     while (rs.next()) {
+        //         String tableName = rs.getString("name");
+        //         if (!tableName.equals("sqlite_sequence")) {
+        //             stmt.execute("DROP TABLE IF EXISTS " + tableName);
+        //         }
+        //     }
+        // } catch (Exception e) {
+        //     e.printStackTrace();
         // }
-        // }
-        // }
+    }
+
+    public void initTable(String table) throws SQLException {
+        try (Statement stmt = conn.createStatement()) {
+            String drop = "DROP TABLE IF EXISTS " + table;
+            String create = "CREATE TABLE " + table + " (label TEXT PRIMARY KEY, data TEXT)";
+    
+            stmt.execute(drop);
+            stmt.execute(create);
+        }
     }
 
     public void loadVectorsIntoDB(String table, Path filePath, int n, int d) throws SQLException, IOException {
         try (Statement createStmt = conn.createStatement()) {
-            String dropTableSQL = "DROP TABLE IF EXISTS " + table;
-            String createTableSQL = "CREATE TABLE " + table + " (label TEXT PRIMARY KEY, data TEXT)";
-            createStmt.execute(dropTableSQL);
-            createStmt.execute(createTableSQL);
+            String dropTable = "DROP TABLE IF EXISTS " + table;
+            String createTable = "CREATE TABLE " + table + " (label TEXT PRIMARY KEY, data TEXT)";
+            createStmt.execute(dropTable);
+            createStmt.execute(createTable);
         }
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath.toFile()));
@@ -64,7 +73,7 @@ public class DB {
                 for (int i = 0; i < tokens.length; i++) {
                     double value = Double.parseDouble(tokens[i]);
                     sb.append(value);
-                    if (i != tokens.length - 1) 
+                    if (i != tokens.length - 1)
                         sb.append(" ");
                 }
 
@@ -78,25 +87,21 @@ public class DB {
         }
     }
 
-    public void loadResultIntoDB(String table, Result result) throws SQLException, IOException {
-        try (Statement createStmt = conn.createStatement()) {
-            String dropTableSQL = "DROP TABLE IF EXISTS " + table;
-            String createTableSQL = "CREATE TABLE " + table + " (label TEXT PRIMARY KEY, data TEXT)";
-            createStmt.execute(dropTableSQL);
-            createStmt.execute(createTableSQL);
-        }
-
+    public void insertRow(String label, String data, String table) throws SQLException {
         try (PreparedStatement stmt = conn
-                .prepareStatement("INSERT INTO " + table + "(label, data) VALUES (?, ?)")) {
+                .prepareStatement("INSERT OR IGNORE INTO " + table + " (label, data) VALUES (?, ?)")) {
+            stmt.setString(1, label);
+            stmt.setString(2, data);
+            stmt.executeUpdate();
+        }
+    }
 
-            for (Result.Element e : result.get()) {
-                String label = e.label;
-                stmt.setString(1, label);
-                stmt.setString(2, "" + e.value);
-                stmt.addBatch();
-            }
-            stmt.executeBatch();
-            System.out.println("Result loaded into DB table '" + table + "'");
+    public void insertVector(Vector v, String table) throws SQLException {
+        try (PreparedStatement stmt = conn
+                .prepareStatement("INSERT OR IGNORE INTO " + table + " (label, data) VALUES (?, ?)")) {
+            stmt.setString(1, v.getLabel());
+            stmt.setString(2, v.dataString());
+            stmt.executeUpdate();
         }
     }
 
@@ -137,7 +142,7 @@ public class DB {
                 rowCount = rs.getInt(1);
             }
         }
-
+        System.out.println("jhg");
         if (rowCount == 0)
             return null;
 
@@ -155,34 +160,28 @@ public class DB {
         }
     }
 
-    public void applyNashTransform(NashDevice nd, String table) throws SQLException {
-        String selectQuery = "SELECT label, data FROM " + table;
-        String updateQuery = "UPDATE " + table + " SET data = ? WHERE label = ?";
+    public List<String> getColumnWhereEquals(String targetColumn, String value, String table, String resultColumn)
+            throws SQLException {
+        List<String> results = new ArrayList<>();
 
-        try (
-                PreparedStatement selectStmt = conn.prepareStatement(selectQuery);
-                PreparedStatement updateStmt = conn.prepareStatement(updateQuery);
-                ResultSet rs = selectStmt.executeQuery()) {
-            int counter = 0;
+        String sql = "SELECT " + resultColumn + " FROM " + table + " WHERE " + targetColumn + " = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, value);
+            ResultSet rs = stmt.executeQuery();
+
             while (rs.next()) {
-                String label = rs.getString("label");
-                String data = rs.getString("data");
-                Vector original = Vector.fromString(label, data);
-                Vector transformed = nd.transform(original);
-                System.out.println("O: " + original.dimensionality() + ", t: " + transformed.dimensionality());
-
-                // update the database
-                updateStmt.setString(1, transformed.dataString());
-                updateStmt.setString(2, label);
-                updateStmt.addBatch();
-
-                counter++;
-                if (counter % 100 == 0) {
-                    updateStmt.executeBatch();
-                }
+                results.add(rs.getString(resultColumn));
             }
-            updateStmt.executeBatch();
-            System.out.println("Applied Nash transform to " + counter + " vectors in table '" + table + "'");
+        }
+        return results;
+    }
+
+    public boolean elementExists(String label, String table) throws SQLException {
+        String sql = "SELECT 1 FROM " + table + " WHERE label = ? LIMIT 1";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, label);
+            ResultSet rs = stmt.executeQuery();
+            return rs.next();
         }
     }
 

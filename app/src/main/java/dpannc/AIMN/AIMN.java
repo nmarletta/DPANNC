@@ -1,11 +1,9 @@
 package dpannc.AIMN;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.*;
+
+import org.apache.commons.math3.special.Erf;
 
 import dpannc.Vector;
 import dpannc.database.DB;
@@ -13,114 +11,164 @@ import dpannc.database.DBiterator;
 import dpannc.Noise;
 
 public class AIMN {
-    int n;
-    int d;
-    double sensitivity;
-    double epsilon;
-    double delta;
-    int T, remainder;
-    double c, lambda, r, K, alpha, beta, adjSen, threshold, etaU, etaQ;
-    Node root;
+    private DB db;
+    private int n;
+    private int d;
+    private double sensitivity, epsilon, delta;
+    private int T;
+    private double c, lambda, r, K, alpha, beta, adjSen, threshold, etaU, etaQ;
 
-    Random random = new Random(100);
-    Noise noise = new Noise(100);
-    boolean DP = true;
+    private Random random = new Random(100);
+    private Noise noise = new Noise(100);
+    private boolean DP = false;
 
-    Map<String, Vector> nodes; // ID (path) -> gaussian vectors
-    Map<String, List<String>> buckets; // ID (path) -> list of vectors
-    List<Node> leafNodes; // for quicker access to leafs when adding noise
-    List<String> remainderBucket; // for vectors that are not assigned a node
-    List<String> query; // for returning result of a query
+    private static final String nodesTable = "nodesTable";
 
-    public AIMN(int n, int d, double r, double c, double sensitivity, double epsilon, double delta) {
-        remainder = 0;
+    private Map<Integer, List<Vector>> gaussiansAtLevel;
+    private Map<String, Integer> buckets;
+    private List<String> remainderBucket; // for vectors that are not assigned a node
+    private List<String> query; // for returning result of a query
+
+    public AIMN(int n, int d, double r, double c, double sensitivity, double epsilon, double delta, DB db)
+            throws SQLException {
         this.n = n;
         this.d = d;
         this.c = c;
         this.r = r;
-        // r = 1 / Math.pow(log(n, 10), 1.0 / 8.0);
-        lambda = (2 * Math.sqrt(2 * c)) / (c * c + 1);
+        this.db = db;
+        r = 1.0 / Math.pow(log(n, 10), 1.0 / 8.0);
+        lambda = (2.0 * Math.sqrt(2.0 * c)) / (c * c + 1.0);
         K = Math.sqrt(ln(n));
-        alpha = 1 - ((r * r) / 2); // cosine
-        beta = Math.sqrt(1 - (alpha * alpha)); // sine
-        adjSen = 2;
-        threshold = (adjSen / epsilon) * ln(1 + (Math.exp(epsilon / 2) - 1) / delta);
+        alpha = 1.0 - ((r * r) / 2.0); // cosine
+        beta = Math.sqrt(1.0 - (alpha * alpha)); // sine
+        adjSen = 2.0;
+        threshold = (adjSen / epsilon) * ln(1.0 + (Math.exp(epsilon / 2.0) - 1.0) / delta);
         etaU = Math.sqrt((ln(n) / K)) * (lambda / r);
-        etaQ = alpha * etaU - 2 * beta * Math.sqrt(ln(K));
-        T = (int) (10 * ln(K) / (Math.exp(-Math.pow(n, 2)/2)));
-        root = new Node(0, "0");
+        etaQ = alpha * etaU - 2.0 * beta * Math.sqrt(ln(K));
+        // T = 300;
+        // T = (int) (10.0 * ln(K) / (Math.exp(-Math.pow(etaU, 2.0) / 2.0)));
+        double F_etaU = 0.5 * Erf.erfc(etaU / Math.sqrt(2));
+        T = (int) (10.0 * Math.log(K) / F_etaU);
         printSettings();
 
-        nodes = new HashMap<String, Vector>();
-        buckets = new HashMap<String, List<String>>();
-        leafNodes = new ArrayList<Node>();
-        remainderBucket = new ArrayList<String>();
+        gaussiansAtLevel = new HashMap<>();
+        buckets = new HashMap<>();
+        remainderBucket = new ArrayList<>();
+        db.initTable(nodesTable);
+        generateGaussians();
     }
 
     public void populateFromDB(String table, DB db) throws SQLException {
         try (DBiterator it = db.iterator(table)) {
             int counter = 0;
+            System.out.println("Loading vectors into AIMN...");
+            printProgress(counter, n, 10);
             while (it.hasNext()) {
                 Vector v = it.next();
-                root.insertPoint(v);
-                printProgress(counter, n, 10);
+                insert(v);
                 counter++;
+                printProgress(counter, n, 10);
             }
-            if (DP)
+            System.out.println(n - remainderBucket.size() + " vectors succesfully loaded into AIMN ("
+                    + remainderBucket.size() + " in remainder)");
+            if (DP) {
                 addNoise();
+                System.out.println("Added noise to counts");
+            }
+
         }
     }
 
-    public void populateFromFile(int n, int d, Path filePath) throws Exception {
-        if (n < 1)
-            throw new Exception("Invalid n");
-        if (d < 2)
-            throw new Exception("Invalid d");
+    private void insert(Vector v) throws SQLException {
+        int level = 0;
+        String path = "R"; // starting point, not stored in DB
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath.toAbsolutePath().toString()))) {
-            String line;
-            int counter = 0;
-            while ((line = reader.readLine()) != null && counter < n) {
-                String label = line.substring(0, line.indexOf(' '));
-                String data = line.substring(line.indexOf(' ') + 1);
-                Vector vector = Vector.fromString(label, data);
-                root.insertPoint(vector);
-                printProgress(counter, n, 10);
-                counter++;
-            }  
+        while (level < K) {
+            boolean accepted = false;
+            List<Vector> gaussians = gaussiansAtLevel.get(level);
+            for (int i = 0; i < T; i++) {
+                Vector g = gaussians.get(i);
+                if (v.dot(g) >= etaU) {
+                    path += ":" + i;
+                    level++;
+                    accepted = true;
+                    break;
+                }
+            }
 
-            if (DP)
-                addNoise();
-        } catch (IOException e) {
-            e.printStackTrace();
+            if (!accepted) {
+                remainderBucket.add(v.getLabel());
+                System.out.println("remainder: " + remainderBucket.size());
+                return;
+            }
         }
-        System.out.println("Insertion complete.");
+
+        db.insertRow(v.getLabel(), path, nodesTable);
+        buckets.put(path, buckets.getOrDefault(path, 0) + 1);
     }
 
     private void addNoise() {
-        for (Node n : leafNodes) {
-            n.addNoise();
+        for (Integer count : buckets.values()) {
+            count = count + (int) noise.TLap(sensitivity, epsilon / adjSen, delta / adjSen);
+            if (count <= threshold) {
+                count = 0;
+            }
         }
     }
 
-    public int query(Vector q) {
+    public int query(Vector q) throws Exception {
         if (q == null)
             throw new IllegalArgumentException("cannot query a null vector");
         if (q.get().length != d)
             throw new IllegalArgumentException(
                     "query dimensionality needs to be the same as data: " + q.get().length + "!= " + d);
-        query = new ArrayList<String>();
-        Vector c = q.clone().normalize();
-        return root.query(c);
+
+        System.out.println("querying vector: " + q.getLabel());
+        query = new ArrayList<>();
+        int count = query(q, 0, "R");
+        System.out.println("c: " + count);
+        return count;
+    }
+
+    private int query(Vector q, int level, String path) throws Exception {
+        if (level >= K) {
+            // List<String> vectors = db.getColumnWhereEquals("data", path, nodesTable, "label");
+            // query.addAll(vectors);
+            return buckets.getOrDefault(path, 0);
+        }
+
+        int count = 0;
+        List<Vector> gaussians = gaussiansAtLevel.get(level);
+
+        for (int i = 0; i < gaussians.size(); i++) {
+            Vector g = gaussians.get(i);
+            if (q.dot(g) >= etaQ) {
+                count += query(q, level + 1, path + ":" + i);
+            }
+        }
+
+        System.out.println(count);
+        return count;
+    }
+
+    private void generateGaussians() {
+        for (int level = 0; level < K; level++) {
+            List<Vector> gaussians = new ArrayList<>();
+            for (int i = 0; i < T; i++) {
+                gaussians.add(new Vector(d).randomGaussian(random).setLabel("G:" + level + ":" + i));
+            }
+            gaussiansAtLevel.put(level, gaussians);
+        }
     }
 
     public List<String> queryList() throws Exception {
-        if (query.isEmpty()) throw new Exception("query list is empty");
+        if (query.isEmpty())
+            throw new Exception("query list is empty");
         return query;
     }
 
     public int remainder() {
-        return remainder;
+        return remainderBucket.size();
     }
 
     public double getN() {
@@ -156,120 +204,29 @@ public class AIMN {
     }
 
     public void printSettings() {
-        System.out.println("n: " + n);
-        System.out.println("d: " + d);
-        System.out.println("c: " + c);
-        System.out.println("lambda: " + lambda);
-        System.out.println("r: " + r);
-        System.out.println("K: " + K);
-        System.out.println("alpha: " + alpha);
-        System.out.println("beta: " + beta);
-        System.out.println("threshold: " + threshold);
-        System.out.println("etaU: " + etaU);
-        System.out.println("etaQ: " + etaQ);
-        System.out.println("T: " + T);
+        System.out.println("==== AIMN Settings ====");
+
+        printSetting("n", n);
+        printSetting("d", d);
+        printSetting("c", c);
+        printSetting("lambda", lambda);
+        printSetting("r", r);
+        printSetting("K", K);
+        printSetting("alpha", alpha);
+        printSetting("beta", beta);
+        printSetting("threshold", threshold);
+        printSetting("etaU", etaU);
+        printSetting("etaQ", etaQ);
+        printSetting("T", T);
+
+        System.out.println("=======================");
     }
 
-    public class Node {
-        private int level;
-        private int count;
-        private int noisyCount;
-        private boolean isLeaf;
-        private String id;
-        private Vector g;
-        protected List<Node> childNodes;
+    private void printSetting(String name, double value) {
+        System.out.printf("%-10s %10.3f%n", name + ":", value);
+    }
 
-        public Node(int level, String id) {
-            this.level = level;
-            this.isLeaf = (level >= K);
-            this.count = 0;
-            this.noisyCount = 0;
-            this.id = id;
-
-            g = new Vector(d).randomGaussian(random);
-
-            childNodes = new ArrayList<>();
-        }
-
-        public void insertPoint(Vector v) {
-            if (isLeaf) {
-                buckets.computeIfAbsent(id, k -> new ArrayList<>()).add(v.getLabel());
-                count++;
-            } else {
-                if (!sendToChildNode(v)) {
-                    remainder++;
-                }
-            }
-        }
-
-        private boolean sendToChildNode(Vector v) {
-            for (int i = 0; i < childNodes.size(); i++) {
-                Node n = childNodes.get(i);
-                if (n.accepts(v, etaU)) {
-                    n.insertPoint(v);
-                    return true;
-                }
-            }
-
-            while (childNodes.size() < T) {
-                int currID = childNodes.size();// < 1 ? 0 : childNodes.size();
-                Node n = new Node(level + 1, id + ":" + currID);
-                childNodes.add(n);
-                if (n.accepts(v, etaU)) {
-                    n.insertPoint(v);
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public int query(Vector q) {
-            if (isLeaf) {
-                if (count > 0) {
-                    query.addAll(buckets.get(id));
-                }
-                if (count < 1 && buckets.get(id) != null) System.out.println("ggg");
-                return count;
-            } else {
-                int total = 0;
-                for (Node n : childNodes) {
-                    if (n.accepts(q, etaQ)) {
-                        total += n.query(q);
-                    }
-                }
-                return total;
-            }
-        }
-
-        public void addNoise() {
-            count = count + (int) noise.TLap(sensitivity, epsilon / adjSen, delta / adjSen);
-            if (noisyCount <= threshold) {
-                noisyCount = 0;
-            }
-        }
-
-        private boolean accepts(Vector v, double etaU) {
-            return g.dot(v) >= etaU;
-        }
-
-        // public List<Node> getChildNodes() {
-        // return childNodes;
-        // }
-
-        public Vector gaussian() {
-            return g;
-        }
-
-        public boolean isLeaf() {
-            return isLeaf;
-        }
-
-        public String id() {
-            return id;
-        }
-
-        public int count() {
-            return count;
-        }
+    private void printSetting(String name, int value) {
+        System.out.printf("%-10s %10d%n", name + ":", value);
     }
 }

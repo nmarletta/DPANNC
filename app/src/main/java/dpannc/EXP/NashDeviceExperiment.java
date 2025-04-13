@@ -24,8 +24,8 @@ public class NashDeviceExperiment {
         // exp4();
         // exp5();
         // exp6();
-        exp7();
-        // exp8();
+        // exp7();
+        exp8();
         // distMap();
     }
 
@@ -165,10 +165,13 @@ public class NashDeviceExperiment {
 
         // apply Nash Transform
         NashDevice nd = new NashDevice(d, d, random);
-        db.applyNashTransform(nd, table2);
-        // db.applyTransformation(data -> {
-        // return nd.transform(Vector.fromString(".", data)).dataString();
-        // }, table2);
+        db.applyTransformation(data -> {
+            Vector v = Vector.fromString(".", data);
+            // v.multiply(scale);
+            v = nd.transform(v);
+            return v.dataString();
+        }, table2);
+
 
 
         Path filepathTarget = Paths.get("app/results/nash/" + name + ".csv");
@@ -250,7 +253,7 @@ public class NashDeviceExperiment {
         double scale = 1.0 / 3100.0;
 
         // load into database
-        Path filepathSource = Paths.get("app/resources/fashionMNIST/fashionMNIST_60K_784D.txt");
+        Path filepathSource = Paths.get("app/resources/fashionMNIST/fashionMNIST_60K_784D.txt").toAbsolutePath();
         String table1 = "table1";
         String table2 = "table2";
         db.loadVectorsIntoDB(table1, filepathSource, n, d);
@@ -349,14 +352,14 @@ public class NashDeviceExperiment {
         // settings
         int SEED = 10;
         Random random = new Random(SEED);
-        int n = 60_000; // sample size
+        int n = 1_000; // sample size
         int d = 784; // dimensions
         int rep = 5;
         double scale = 1.0 / 3100.0;
 
         // load into database
         // Path filepathSource = Paths.get("app/resources/fasttext/dk-300d.txt");
-        Path filepathSource = Paths.get("app/resources/fashionMNIST/fashionMNIST_60K_784D.txt");
+        Path filepathSource = Paths.get("app/resources/fashionMNIST/fashionMNIST_60K_784D.txt").toAbsolutePath();
         String table1 = "table1";
         String table2 = "table2";
         db.loadVectorsIntoDB(table1, filepathSource, n, d);

@@ -42,6 +42,7 @@ public class Result {
             Element el = new Element(v.getLabel(), dist);
             list.add(el);
         }
+        System.out.println("Distances calculated in table: " + table);
         return this;
     }
 

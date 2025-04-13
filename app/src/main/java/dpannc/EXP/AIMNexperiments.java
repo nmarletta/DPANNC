@@ -15,9 +15,8 @@ import dpannc.Vector;
 
 public class AIMNexperiments {
     static DB db = new DB("dpannc");
-
     public static void main(String[] args) throws Exception {
-        expAIMN();
+        // expAIMN();
     }
 
     public static void expAIMN() throws Exception {
@@ -29,7 +28,7 @@ public class AIMNexperiments {
         int d = 300;
         int reps = 1;
 
-        Path filepathSource = Paths.get("app/resources/fasttext/english_2M_300D.txt");
+        Path filepathSource = Paths.get("app/resources/fasttext/english_2M_300D.txt").toAbsolutePath();
         String table = "vectors";
         db.loadVectorsIntoDB(table, filepathSource, n, d);
 
@@ -38,6 +37,7 @@ public class AIMNexperiments {
             Vector v = Vector.fromString(".", data);
             // v.multiply(scale);
             v = nd.transform(v);
+            // v.normalize();
             return v.dataString();
         }, table);
 
@@ -45,9 +45,9 @@ public class AIMNexperiments {
         double epsilon = 2.0;
         double delta = 0.0001;
         double r = 0.667;
-        double c = 1.2;
+        double c = 2;
 
-        AIMN aimn = new AIMN(n, d, r, c, sensitivity, epsilon, delta);
+        AIMN aimn = new AIMN(n, d, r, c, sensitivity, epsilon, delta, db);
         aimn.DP(false);
         aimn.populateFromDB(table, db);
 
@@ -58,15 +58,17 @@ public class AIMNexperiments {
 
         Path filepathTarget = Paths.get("app/results/AIMN/" + name + ".csv");
         try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
+            System.out.println("check");
             // CSV header
             writer.write("initial distance from q / found vectors\n"); // title
             writer.write("0\n"); // coulmns on x-axis
             writer.write("1,2,3,4,5,6,7,8,9,10,11,12,13\n"); // columns on y-axis
             writer.write("L_brute, L_TP, L_FN, L_FP, L_f1Total, L_precisionTotal, L_recallTotal, M_brute, M_TP, M_FN, M_FP, M_f1Total, M_precisionTotal, M_recallTotal\n");
-
+            
             for (int i = 0; i < reps; i++) {
                 Vector q = db.getRandomVector(table, random);
-                aimn.query(q);
+                int count = aimn.query(q);
+                System.out.println(count);
                 List<String> queryList = aimn.queryList();
                 Result AIMNres = new Result().loadDistancesBetween(q, queryList, table, db); // true
                 Result BRUTEres = new Result().loadDistancesBetween(q, table, db); // true

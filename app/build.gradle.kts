@@ -39,7 +39,12 @@ java {
 
 application {
     // Define the main class for the application.
-    mainClass = "dpannc.EXP.NashDeviceExperiment"
+    mainClass = "dpannc.Main"
+    // mainClass = "dpannc.EXP.AIMNexperiments"
+    applicationDefaultJvmArgs = listOf(
+        "-Xms1g", // Initial heap size
+        "-Xmx8g"    // Max heap size
+    )
 }
 
 tasks.named<Test>("test") {
