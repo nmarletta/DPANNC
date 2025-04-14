@@ -6,6 +6,7 @@ import java.sql.*;
 import java.util.*;
 import java.util.function.Function;
 
+import dpannc.Progress;
 import dpannc.Vector;
 
 public class DB {
@@ -23,15 +24,16 @@ public class DB {
 
         // // drop all existing tables
         // try (Statement stmt = conn.createStatement();
-        //         ResultSet rs = stmt.executeQuery("SELECT name FROM sqlite_master WHERE type='table'")) {
-        //     while (rs.next()) {
-        //         String tableName = rs.getString("name");
-        //         if (!tableName.equals("sqlite_sequence")) {
-        //             stmt.execute("DROP TABLE IF EXISTS " + tableName);
-        //         }
-        //     }
+        // ResultSet rs = stmt.executeQuery("SELECT name FROM sqlite_master WHERE
+        // type='table'")) {
+        // while (rs.next()) {
+        // String tableName = rs.getString("name");
+        // if (!tableName.equals("sqlite_sequence")) {
+        // stmt.execute("DROP TABLE IF EXISTS " + tableName);
+        // }
+        // }
         // } catch (Exception e) {
-        //     e.printStackTrace();
+        // e.printStackTrace();
         // }
     }
 
@@ -39,7 +41,7 @@ public class DB {
         try (Statement stmt = conn.createStatement()) {
             String drop = "DROP TABLE IF EXISTS " + table;
             String create = "CREATE TABLE " + table + " (label TEXT PRIMARY KEY, data TEXT)";
-    
+
             stmt.execute(drop);
             stmt.execute(create);
         }
@@ -52,23 +54,26 @@ public class DB {
             createStmt.execute(dropTable);
             createStmt.execute(createTable);
         }
-
+    
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath.toFile()));
-                PreparedStatement stmt = conn
-                        .prepareStatement("INSERT INTO " + table + "(label, data) VALUES (?, ?)")) {
-
+             PreparedStatement stmt = conn.prepareStatement("INSERT INTO " + table + "(label, data) VALUES (?, ?)")) {
+    
+            Progress.newStatus("Loading vectors into DB table: " + table, n);
+    
             String line;
             int counter = 0;
+            int batchSize = n/100;
+    
             while ((line = reader.readLine()) != null && counter < n) {
                 String label = line.substring(0, line.indexOf(' '));
                 String data = line.substring(line.indexOf(' ') + 1);
-
+    
                 String[] tokens = data.split(" ");
                 if (tokens.length != d) {
                     System.err.println("Skipping malformed line: " + line);
                     continue;
                 }
-
+    
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < tokens.length; i++) {
                     double value = Double.parseDouble(tokens[i]);
@@ -76,16 +81,23 @@ public class DB {
                     if (i != tokens.length - 1)
                         sb.append(" ");
                 }
-
+    
                 stmt.setString(1, label);
                 stmt.setString(2, sb.toString());
                 stmt.addBatch();
                 counter++;
+                Progress.updateStatus(counter);
+    
+                if (counter % batchSize == 0) {
+                    stmt.executeBatch();
+                }
             }
-            stmt.executeBatch();
-            System.out.println(counter + " vectors loaded into DB table '" + table + "'");
+    
+            stmt.executeBatch(); // execute any remaining
+            Progress.clearStatus();
         }
     }
+    
 
     public void insertRow(String label, String data, String table) throws SQLException {
         try (PreparedStatement stmt = conn
@@ -142,7 +154,6 @@ public class DB {
                 rowCount = rs.getInt(1);
             }
         }
-        System.out.println("jhg");
         if (rowCount == 0)
             return null;
 
@@ -189,10 +200,19 @@ public class DB {
         String selectQuery = "SELECT label, data FROM " + table;
         String updateQuery = "UPDATE " + table + " SET data = ? WHERE label = ?";
 
+        int totalRows = 0;
+        try (PreparedStatement countStmt = conn.prepareStatement("SELECT COUNT(*) FROM " + table);
+                ResultSet countRs = countStmt.executeQuery()) {
+            if (countRs.next()) {
+                totalRows = countRs.getInt(1);
+            }
+        }
+
         try (
                 PreparedStatement selectStmt = conn.prepareStatement(selectQuery);
                 PreparedStatement updateStmt = conn.prepareStatement(updateQuery);
                 ResultSet rs = selectStmt.executeQuery()) {
+            Progress.newStatus("Transforming data in table: " + table, totalRows);
             int counter = 0;
             while (rs.next()) {
                 String label = rs.getString("label");
@@ -206,9 +226,10 @@ public class DB {
                 if (counter % 100 == 0) {
                     updateStmt.executeBatch();
                 }
+                Progress.updateStatus(counter);
             }
             updateStmt.executeBatch();
-            System.out.println("Applied data transformation to " + counter + " entries in table '" + table + "'");
+            Progress.clearStatus();
         }
     }
 
@@ -217,6 +238,19 @@ public class DB {
             stmt.execute("DROP TABLE IF EXISTS " + table);
         }
     }
+
+    public int tableSize(String table) throws SQLException {
+        String countQuery = "SELECT COUNT(*) FROM " + table;
+        try (PreparedStatement stmt = conn.prepareStatement(countQuery);
+             ResultSet rs = stmt.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            } else {
+                return 0;
+            }
+        }
+    }
+    
 
     public DBiterator iterator(String table) throws SQLException {
         return new DBiterator(conn, table);

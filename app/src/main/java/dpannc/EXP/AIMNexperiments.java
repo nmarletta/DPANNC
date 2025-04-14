@@ -9,6 +9,7 @@ import java.util.Random;
 import java.util.Set;
 
 import dpannc.NashDevice;
+import dpannc.Progress;
 import dpannc.AIMN.AIMN;
 import dpannc.database.DB;
 import dpannc.Vector;
@@ -24,13 +25,17 @@ public class AIMNexperiments {
 
         int SEED = 100;
         Random random = new Random(SEED);
-        int n = 100_000;
+        int n = 10_000;
         int d = 300;
         int reps = 1;
+
+        int pg = 0;
+        Progress.newBar("Experiment AIMN", 3 + reps);
 
         Path filepathSource = Paths.get("app/resources/fasttext/english_2M_300D.txt").toAbsolutePath();
         String table = "vectors";
         db.loadVectorsIntoDB(table, filepathSource, n, d);
+        Progress.updateBar(++pg);
 
         NashDevice nd = new NashDevice(d, d, random);
         db.applyTransformation(data -> {
@@ -40,25 +45,28 @@ public class AIMNexperiments {
             // v.normalize();
             return v.dataString();
         }, table);
+        Progress.updateBar(++pg);
 
         double sensitivity = 1.0;
         double epsilon = 2.0;
         double delta = 0.0001;
         double r = 0.667;
-        double c = 2;
+        double c = 1.5;
 
         AIMN aimn = new AIMN(n, d, r, c, sensitivity, epsilon, delta, db);
         aimn.DP(false);
         aimn.populateFromDB(table, db);
-
+        Progress.updateBar(++pg);
+        r = aimn.getR();
         double L_f1Total, L_precisionTotal, L_recallTotal, L_brute, L_TP, L_FN, L_FP;
         L_f1Total = L_precisionTotal = L_recallTotal = L_brute = L_TP = L_FN = L_FP = 0;
         double M_f1Total, M_precisionTotal, M_recallTotal, M_brute, M_TP, M_FN, M_FP;
         M_f1Total = M_precisionTotal = M_recallTotal = M_brute = M_TP = M_FN = M_FP = 0;
+        double H_amount = 0;
+        double A_total = 0;
 
         Path filepathTarget = Paths.get("app/results/AIMN/" + name + ".csv");
         try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
-            System.out.println("check");
             // CSV header
             writer.write("initial distance from q / found vectors\n"); // title
             writer.write("0\n"); // coulmns on x-axis
@@ -68,10 +76,11 @@ public class AIMNexperiments {
             for (int i = 0; i < reps; i++) {
                 Vector q = db.getRandomVector(table, random);
                 int count = aimn.query(q);
-                System.out.println(count);
                 List<String> queryList = aimn.queryList();
-                Result AIMNres = new Result().loadDistancesBetween(q, queryList, table, db); // true
-                Result BRUTEres = new Result().loadDistancesBetween(q, table, db); // true
+
+                Result AIMNres = new Result().loadDistancesBetween(q, queryList, table, db);
+                Result BRUTEres = new Result().loadDistancesBetween(q, table, db);
+                Progress.printAbove("Distances calculated");
 
                 // INNER REGION results
                 Set<String> A_L = AIMNres.lessThan(r);
@@ -89,14 +98,14 @@ public class AIMNexperiments {
                 double L_recall = (A_L.size() == 0) ? 0 : (double) L_intersection / A_L.size(); // TP / (TP + FN)
                 double L_f1 = (L_precision + L_recall == 0) ? 0 : 2 * L_precision * L_recall / (L_precision + L_recall);
 
-                L_f1Total += L_f1 / reps;
-                L_precisionTotal += L_precision / reps;
-                L_recallTotal += L_recall / reps;
                 L_brute += A_L.size() / reps;
                 L_TP += L_intersection / reps;
                 L_FN += (A_L.size() - L_intersection) / reps;
                 L_FP += (B_L.size() - L_intersection) / reps;
-
+                L_f1Total += L_f1 / reps;
+                L_precisionTotal += L_precision / reps;
+                L_recallTotal += L_recall / reps;
+                
                 // FUZZY REGION results
                 Set<String> A_M = AIMNres.within(r, c * r);
                 Set<String> B_M = BRUTEres.within(r, c * r);
@@ -121,15 +130,19 @@ public class AIMNexperiments {
                 M_FN += (A_M.size() - M_intersection) / reps;
                 M_FP += (B_M.size() - M_intersection) / reps;
 
+                H_amount = (AIMNres.size() - A_L.size() - A_M.size()) / reps;
+                A_total = AIMNres.size() / reps;
+
+                Progress.updateBar(++pg);
             }
-            System.out.println("r: " + r);
 
             // write result to file
-            writer.write(String.format(Locale.US, "%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f\n",
+            writer.write(String.format(Locale.US, "%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n",
                     L_brute, L_TP, L_FN, L_FP, L_f1Total, L_precisionTotal, L_recallTotal, M_brute, M_TP, M_FN, M_FP,
-                    M_f1Total, M_precisionTotal, M_recallTotal));
+                    M_f1Total, M_precisionTotal, M_recallTotal, H_amount, A_total));
         } catch (Exception e) {
             e.printStackTrace();
         }
+        Progress.end();
     }
 }
