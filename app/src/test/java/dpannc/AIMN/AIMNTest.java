@@ -17,7 +17,7 @@ class AIMNTest {
     @BeforeEach
     void setup() throws SQLException {
         // In-memory SQLite DB for testing
-        db = new DB(":memory:");
+        db = new DB("DB/:memory:", true);
 
         // Create tables
         db.dropTable(vectorTable);
@@ -30,7 +30,7 @@ class AIMNTest {
         db.getConnection().createStatement().execute("CREATE TABLE nodesTable (label TEXT PRIMARY KEY, data TEXT)");
 
         // Init AIMN
-        aimn = new AIMN(10, 2, 0.5, 1.2, 1.0, 2.0, 0.001, db);
+        aimn = new AIMN(10, 2, 1.2, 1.0, 2.0, 0.001, db);
     }
 
     // @Test

@@ -15,9 +15,9 @@ public class VectorSampleExperiment {
     }
     
     public static void exp1() throws Exception {
-        DB db = new DB("dpannc");
-
         String name = "dist_dev";
+        DB db = new DB("DB/AIMN_" + name, true);
+        
         Path filepathTarget = Paths.get("results/vector", name + ".csv");
         try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
             // CSV header

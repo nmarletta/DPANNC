@@ -13,6 +13,9 @@ public class HYexperiments {
     
 
     public static void expHY() throws Exception {
+        String name = "expHY";
+        DB db = new DB("DB/HY_" + name, true);
+        
         int SEED = 100;
         Random random = new Random(SEED);
         int n = 5000;
@@ -23,7 +26,6 @@ public class HYexperiments {
 
         // Path filepath = Paths.get("resources", "fasttext", "dk-300d.txt");
 
-        DB db = new DB("dpannc");
         String table = "vectors";
         db.loadVectorsIntoDB(table, filepath, n, d);
 

@@ -17,8 +17,9 @@ public class DataProperties {
         magnitudeDistribution();
     }
     public static void magnitudeDistribution() throws Exception {
-        DB db = new DB("dpannc");
         String name = "magDis";
+        DB db = new DB("DB/AIMN_" + name, true);
+
         Path filepathTarget = Paths.get("app/results/", name + ".csv");
         try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
             // CSV header

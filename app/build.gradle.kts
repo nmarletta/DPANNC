@@ -41,10 +41,10 @@ application {
     // Define the main class for the application.
     mainClass = "dpannc.Main"
     // mainClass = "dpannc.EXP.AIMNexperiments"
-    applicationDefaultJvmArgs = listOf(
-        "-Xms1g", // Initial heap size
-        "-Xmx8g"    // Max heap size
-    )
+    // applicationDefaultJvmArgs = listOf(
+    //     "-Xms1g", // Initial heap size
+    //     "-Xmx8g"    // Max heap size
+    // )
 }
 
 tasks.named<Test>("test") {
@@ -57,11 +57,7 @@ tasks.named<JavaExec>("run") {
     systemProperty("user.dir", rootProject.projectDir.toString())
 }
 
-// sourceSets {
-//     main {
-//         resources {
-//             exclude("/resources/**")
-//             exclude("**/*.db")
-//         }
-//     }
-// }
+tasks.withType(JavaExec).all {
+    console = org.gradle.api.tasks.ConsoleOutput.Plain
+}
+

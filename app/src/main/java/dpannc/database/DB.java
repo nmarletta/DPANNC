@@ -13,7 +13,7 @@ public class DB {
     private String dbUrl;
     private Connection conn;
 
-    public DB(String dbFilename) {
+    public DB(String dbFilename, boolean deleteOnExit) {
         try {
             this.dbUrl = "jdbc:sqlite:" + dbFilename + ".db";
             Class.forName("org.sqlite.JDBC");
@@ -22,6 +22,9 @@ public class DB {
             e.printStackTrace();
         }
 
+        if (deleteOnExit) {
+            new File(dbFilename + ".db").deleteOnExit();
+        }
         // // drop all existing tables
         // try (Statement stmt = conn.createStatement();
         // ResultSet rs = stmt.executeQuery("SELECT name FROM sqlite_master WHERE
@@ -49,10 +52,13 @@ public class DB {
 
     public void loadVectorsIntoDB(String table, Path filePath, int n, int d) throws SQLException, IOException {
         try (Statement createStmt = conn.createStatement()) {
+            Progress.newStatus("Initializing table: " + table, 1);
             String dropTable = "DROP TABLE IF EXISTS " + table;
             String createTable = "CREATE TABLE " + table + " (label TEXT PRIMARY KEY, data TEXT)";
             createStmt.execute(dropTable);
+            Progress.updateStatus(1);
             createStmt.execute(createTable);
+            Progress.clearStatus();
         }
     
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath.toFile()));
@@ -70,7 +76,6 @@ public class DB {
     
                 String[] tokens = data.split(" ");
                 if (tokens.length != d) {
-                    System.err.println("Skipping malformed line: " + line);
                     continue;
                 }
     
@@ -88,7 +93,7 @@ public class DB {
                 counter++;
                 Progress.updateStatus(counter);
     
-                if (counter % batchSize == 0) {
+                if (n > 10 && counter % batchSize == 0) {
                     stmt.executeBatch();
                 }
             }
@@ -165,7 +170,6 @@ public class DB {
             if (rs.next()) {
                 return Vector.fromString(rs.getString("label"), rs.getString("data"));
             } else {
-                System.out.println("null");
                 return null;
             }
         }
@@ -250,8 +254,26 @@ public class DB {
             }
         }
     }
-    
 
+    public void deleteDB() {
+        try {
+            if (conn != null && !conn.isClosed()) {
+                conn.close();
+            }
+            String filename = dbUrl.replace("jdbc:sqlite:", "");
+            File file = new File(filename);
+            if (file.exists()) {
+                if (file.delete()) {
+                    System.out.println("Deleted DB file: " + file.getAbsolutePath());
+                } else {
+                    System.out.println("Failed to delete DB file: " + file.getAbsolutePath());
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
     public DBiterator iterator(String table) throws SQLException {
         return new DBiterator(conn, table);
     }

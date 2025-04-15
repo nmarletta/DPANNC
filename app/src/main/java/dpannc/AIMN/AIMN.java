@@ -30,7 +30,7 @@ public class AIMN {
     private List<String> remainderBucket; // for vectors that are not assigned a node
     private List<String> query; // for returning result of a query
 
-    public AIMN(int n, int d, double r, double c, double sensitivity, double epsilon, double delta, DB db)
+    public AIMN(int n, int d, double c, double sensitivity, double epsilon, double delta, DB db)
             throws SQLException {
         this.db = db;
         this.n = n;
@@ -47,10 +47,9 @@ public class AIMN {
         etaU = Math.sqrt((ln(n) / K)) * (lambda / r);
         etaQ = alpha * etaU - 2.0 * beta * Math.sqrt(ln(K));
         // T = 300;
-        T = (int) (10.0 * ln(K) / (Math.exp(-Math.pow(etaU, 2.0) / 2.0)));
-        // double F_etaU = 0.5 * Erf.erfc(etaU / Math.sqrt(2));
-        // T = (int) (10.0 * ln(K) / F_etaU);
-        Progress.printAbove(getSettingsString());
+        // T = (int) (10.0 * ln(K) / (Math.exp(-Math.pow(etaU, 2.0) / 2.0)));
+        double F_etaU = 0.5 * Erf.erfc(etaU / Math.sqrt(2));
+        T = (int) (10.0 * ln(K) / F_etaU);
 
         gaussiansAtLevel = new HashMap<>();
         nodes = new HashMap<>();

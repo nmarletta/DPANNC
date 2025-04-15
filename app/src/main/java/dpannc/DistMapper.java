@@ -104,9 +104,9 @@ public class DistMapper {
     }
 
     public static void exp() throws Exception {
-        DB db = new DB("dpannc");
-
         String name = "mapper";
+        DB db = new DB("DB/Mapper_" + name, true);
+
         Path filepathTarget = Paths.get("results/nash/" + name + ".csv");
         try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
             // CSV header
