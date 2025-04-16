@@ -22,8 +22,8 @@ public class NashDeviceExperiment {
         // exp1();
         // exp2();
         // exp3();
-        exp4();
-        // exp5();
+        // exp4();
+        exp5();
         // exp6();
         // exp7();
         // exp8();
@@ -36,7 +36,7 @@ public class NashDeviceExperiment {
      * ***********************
      */
     public static void exp1() throws Exception {
-        String name = "dist_diff";
+        String name = "nash1";
 
         // settings
         int SEED = 10;
@@ -93,7 +93,7 @@ public class NashDeviceExperiment {
      * description....
      */
     public static void exp2() throws Exception {
-        String name = "dist_trans";
+        String name = "nash2";
 
         // settings
         int SEED = 10;
@@ -150,7 +150,7 @@ public class NashDeviceExperiment {
      * ***********************
      */
     public static void exp3() throws Exception {
-        String name = "dist_diff2";
+        String name = "nash3";
 
         // settings
         int SEED = 10;
@@ -208,7 +208,7 @@ public class NashDeviceExperiment {
      * ligegyldig
      */
     public static void exp4() throws Exception {
-        String name = "dist_trans2";
+        String name = "nash4";
 
         // settings
         int SEED = 10;
@@ -266,7 +266,7 @@ public class NashDeviceExperiment {
      * *********************
      */
     public static void exp5() throws Exception {
-        String name = "dim-red";
+        String name = "nash5";
         DB db = new DB("DB/AIMN_" + name, true);
 
         // settings
@@ -373,7 +373,7 @@ public class NashDeviceExperiment {
      * *********************
      */
     public static void exp6() throws Exception {
-        String name = "found-mnist";
+        String name = "nash6";
         DB db = new DB("DB/AIMN_" + name, true);
 
         // settings
@@ -467,7 +467,7 @@ public class NashDeviceExperiment {
      * *********************
      */
     public static void exp7() throws Exception {
-        String name = "found-mnist";
+        String name = "nash7";
         DB db = new DB("DB/AIMN_" + name, true);
 
         // settings
@@ -571,7 +571,7 @@ public class NashDeviceExperiment {
      * *********************
      */
     public static void exp8() throws Exception {
-        String name = "rval2";
+        String name = "nash8";
         DB db = new DB("DB/AIMN_" + name, true);
 
         // settings
@@ -639,11 +639,11 @@ public class NashDeviceExperiment {
 
     /*
      * *********************
-     * 8 * DIST-MAP
+     * 9 * DIST-MAP
      * *********************
      */
-    public static void distMap() throws Exception {
-        String name = "dist_map";
+    public static void exp9() throws Exception {
+        String name = "nash9";
         // DB db = new DB("DB/AIMN_" + name, true);
 
         // settings

@@ -14,30 +14,18 @@ public class DB {
     private Connection conn;
 
     public DB(String dbFilename, boolean deleteOnExit) {
+        this.dbUrl = "jdbc:sqlite:" + dbFilename + ".db";
+    
         try {
-            this.dbUrl = "jdbc:sqlite:" + dbFilename + ".db";
             Class.forName("org.sqlite.JDBC");
             this.conn = DriverManager.getConnection(dbUrl);
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to connect to SQLite DB at " + dbUrl, e);
         }
-
+    
         if (deleteOnExit) {
             new File(dbFilename + ".db").deleteOnExit();
         }
-        // // drop all existing tables
-        // try (Statement stmt = conn.createStatement();
-        // ResultSet rs = stmt.executeQuery("SELECT name FROM sqlite_master WHERE
-        // type='table'")) {
-        // while (rs.next()) {
-        // String tableName = rs.getString("name");
-        // if (!tableName.equals("sqlite_sequence")) {
-        // stmt.execute("DROP TABLE IF EXISTS " + tableName);
-        // }
-        // }
-        // } catch (Exception e) {
-        // e.printStackTrace();
-        // }
     }
 
     public void initTable(String table) throws SQLException {

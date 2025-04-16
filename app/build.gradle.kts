@@ -57,7 +57,21 @@ tasks.named<JavaExec>("run") {
     systemProperty("user.dir", rootProject.projectDir.toString())
 }
 
-tasks.withType(JavaExec).all {
-    console = org.gradle.api.tasks.ConsoleOutput.Plain
-}
+// tasks.withType(JavaExec).all {
+//     console = org.gradle.api.tasks.ConsoleOutput.Plain
+// }
 
+// Enabling commands for running experiments
+// tasks.register<JavaExec>("exp") {
+//     group = "experiment"
+//     description = "Run experiments like: gradle exp -- aimn1 [extra args]"
+
+//     classpath = sourceSets["main"].runtimeClasspath
+//     mainClass.set("dpannc.Main")
+
+//     // Gradle will pass everything after `--` into this
+//     args = project.gradle.startParameter.taskRequests
+//         .flatMap { it.args }
+//         .toList()
+//         .let { listOf("exp") + it } // prepend "exp" for Main args[0]
+// }

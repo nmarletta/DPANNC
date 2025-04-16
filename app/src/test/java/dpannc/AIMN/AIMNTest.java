@@ -17,7 +17,7 @@ class AIMNTest {
     @BeforeEach
     void setup() throws SQLException {
         // In-memory SQLite DB for testing
-        db = new DB("DB/:memory:", true);
+        db = new DB(":memory:", false);
 
         // Create tables
         db.dropTable(vectorTable);

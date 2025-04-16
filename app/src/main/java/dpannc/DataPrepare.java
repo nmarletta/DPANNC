@@ -6,24 +6,10 @@ import java.io.FileWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.stream.Collectors;
 
 public class DataPrepare {
     public static void main(String[] args) {
-        MNISTcsv2txt();
-        //// divide each component in each vector by something
-            // db.applyTransformation(str -> {
-            //     String transformed = Arrays.stream(str.split(" "))
-            //             .mapToDouble(Double::parseDouble)
-            //             .map(v -> v / 2)
-            //             .mapToObj(Double::toString)
-            //             .collect(Collectors.joining(" "));
-            //     return transformed;
-            // }, table1);
-
-            // removeFirstLine();
-        
+        MNISTcsv2txt();        
     }
 
     public static void MNISTcsv2txt() {

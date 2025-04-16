@@ -12,7 +12,7 @@ import dpannc.database.DB;
 public class HYexperiments {
     
 
-    public static void expHY() throws Exception {
+    public static void exp1() throws Exception {
         String name = "expHY";
         DB db = new DB("DB/HY_" + name, true);
         

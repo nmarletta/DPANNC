@@ -188,47 +188,12 @@ public class AIMN {
         DP = b;
     }
 
-    private void printProgress(int c, int n, int step) {
-        double progress = (double) c / n * 100;
-        double margin = 1e-9;
-        if (Math.abs(progress % step) < margin) {
-            System.out.println((int) progress + "% completed");
-        }
-    }
-
     public static double log(double N, int base) {
         return Math.log(N) / Math.log(base);
     }
 
     public static double ln(double N) {
         return Math.log(N);
-    }
-
-    public void printSettings() {
-        System.out.println("==== AIMN Settings ====");
-
-        printSetting("n", n);
-        printSetting("d", d);
-        printSetting("c", c);
-        printSetting("lambda", lambda);
-        printSetting("r", r);
-        printSetting("K", K);
-        printSetting("alpha", alpha);
-        printSetting("beta", beta);
-        printSetting("threshold", threshold);
-        printSetting("etaU", etaU);
-        printSetting("etaQ", etaQ);
-        printSetting("T", T);
-
-        System.out.println("=======================");
-    }
-
-    private void printSetting(String name, double value) {
-        System.out.printf("%-10s %10.3f%n", name + ":", value);
-    }
-
-    private void printSetting(String name, int value) {
-        System.out.printf("%-10s %10d%n", name + ":", value);
     }
 
     public String getSettingsString() {

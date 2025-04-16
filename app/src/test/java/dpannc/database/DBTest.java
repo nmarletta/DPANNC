@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DBTest {
-    private static final String DB_NAME = "DB/testdb";
+    private static final String DB_NAME = ":memory:";
     private DB db;
 
     @BeforeEach
