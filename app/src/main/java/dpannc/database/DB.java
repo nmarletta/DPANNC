@@ -38,13 +38,13 @@ public class DB {
         }
     }
 
-    public void loadVectorsIntoDB(String table, Path filePath, int n, int d) throws SQLException, IOException {
+    public void loadVectorsIntoDB(String table, Path filePath, int n, int d) throws Exception {
         try (Statement createStmt = conn.createStatement()) {
-            Progress.newStatus("Initializing table: " + table, 1);
+            Progress.newStatusBar("Initializing table: " + table, 1);
             String dropTable = "DROP TABLE IF EXISTS " + table;
             String createTable = "CREATE TABLE " + table + " (label TEXT PRIMARY KEY, data TEXT)";
             createStmt.execute(dropTable);
-            Progress.updateStatus(1);
+            Progress.updateStatusBar(1);
             createStmt.execute(createTable);
             Progress.clearStatus();
         }
@@ -52,7 +52,7 @@ public class DB {
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath.toFile()));
              PreparedStatement stmt = conn.prepareStatement("INSERT INTO " + table + "(label, data) VALUES (?, ?)")) {
     
-            Progress.newStatus("Loading vectors into DB table: " + table, n);
+            Progress.newStatusBar("Loading vectors into DB table: " + table, n);
     
             String line;
             int counter = 0;
@@ -79,7 +79,7 @@ public class DB {
                 stmt.setString(2, sb.toString());
                 stmt.addBatch();
                 counter++;
-                Progress.updateStatus(counter);
+                Progress.updateStatusBar(counter);
     
                 if (n > 10 && counter % batchSize == 0) {
                     stmt.executeBatch();
@@ -188,7 +188,7 @@ public class DB {
         }
     }
 
-    public void applyTransformation(Function<String, String> transformer, String table) throws SQLException {
+    public void applyTransformation(Function<String, String> transformer, String table) throws Exception {
         String selectQuery = "SELECT label, data FROM " + table;
         String updateQuery = "UPDATE " + table + " SET data = ? WHERE label = ?";
 
@@ -204,7 +204,7 @@ public class DB {
                 PreparedStatement selectStmt = conn.prepareStatement(selectQuery);
                 PreparedStatement updateStmt = conn.prepareStatement(updateQuery);
                 ResultSet rs = selectStmt.executeQuery()) {
-            Progress.newStatus("Transforming data in table: " + table, totalRows);
+            Progress.newStatusBar("Transforming data in table: " + table, totalRows);
             int counter = 0;
             while (rs.next()) {
                 String label = rs.getString("label");
@@ -218,7 +218,7 @@ public class DB {
                 if (counter % 100 == 0) {
                     updateStmt.executeBatch();
                 }
-                Progress.updateStatus(counter);
+                Progress.updateStatusBar(counter);
             }
             updateStmt.executeBatch();
             Progress.clearStatus();

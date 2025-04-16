@@ -107,7 +107,7 @@ public class DistMapper {
         String name = "mapper";
         DB db = new DB("DB/Mapper_" + name, true);
 
-        Path filepathTarget = Paths.get("results/nash/" + name + ".csv");
+        Path filepathTarget = Paths.get("app/results/nash/" + name + ".csv");
         try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
             // CSV header
             writer.write("initial distance value / mapped values from DistMapper\n");

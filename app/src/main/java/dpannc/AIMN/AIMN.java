@@ -58,15 +58,15 @@ public class AIMN {
         generateGaussians();
     }
 
-    public void populateFromDB(String table, DB db) throws SQLException {
-        Progress.newStatus("Loading vectors into AIMN", n);
+    public void populateFromDB(String table, DB db) throws Exception {
+        Progress.newStatusBar("Loading vectors into AIMN", n);
         try (DBiterator it = db.iterator(table)) {
             int counter = 0;
             while (it.hasNext()) {
                 Vector v = it.next();
                 insert(v);
                 counter++;
-                Progress.updateStatus(counter);
+                Progress.updateStatusBar(counter);
             }
             Progress.printAbove(n - remainderBucket.size() + " vectors succesfully loaded into AIMN ("
                     + remainderBucket.size() + " in remainder)");
@@ -103,8 +103,8 @@ public class AIMN {
         db.insertRow(v.getLabel(), path, nodesTable);
     }
 
-    private void addNoise() {
-        Progress.newStatus("Adding noise to counts", nodes.values().size());
+    private void addNoise() throws Exception {
+        Progress.newStatusBar("Adding noise to counts", nodes.values().size());
         int i = 0;
         for (Integer count : nodes.values()) {
             count = count + (int) noise.TLap(sensitivity, epsilon / adjSen, delta / adjSen);
@@ -112,7 +112,7 @@ public class AIMN {
                 count = 0;
             }
             i++;
-            Progress.updateStatus(i);
+            Progress.updateStatusBar(i);
         }
         Progress.printAbove("Noise added to " + nodes.values().size() + " counts");
     }

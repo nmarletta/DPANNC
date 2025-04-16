@@ -20,7 +20,7 @@ public class Result {
     }
 
     public Result loadDistancesBetween(Vector q, Collection<String> vectors, String table, DB db) throws Exception {
-        Progress.newStatus("Calculating distances from list", vectors.size());
+        Progress.newStatusBar("Calculating distances from list", vectors.size());
         int i = 0;
         list = new ArrayList<Element>();
         for (String label : vectors) {
@@ -31,14 +31,14 @@ public class Result {
             Element el = new Element(label, dist);
             list.add(el);
             i++;
-            Progress.updateStatus(i);
+            Progress.updateStatusBar(i);
         }
         Progress.clearStatus();
         return this;
     }
 
-    public Result loadDistancesBetween(Vector q, String table, DB db) throws SQLException {
-        Progress.newStatus("Calculating distances from list", db.tableSize(table));
+    public Result loadDistancesBetween(Vector q, String table, DB db) throws Exception {
+        Progress.newStatusBar("Calculating distances from list", db.tableSize(table));
         int i = 0;
         list = new ArrayList<Element>();
         DBiterator it = db.iterator(table);
@@ -50,7 +50,7 @@ public class Result {
             Element el = new Element(v.getLabel(), dist);
             list.add(el);
             i++;
-            Progress.updateStatus(i);
+            Progress.updateStatusBar(i);
         }
         Progress.clearStatus();
         return this;

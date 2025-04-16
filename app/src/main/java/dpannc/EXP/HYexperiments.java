@@ -22,7 +22,7 @@ public class HYexperiments {
         int d = 4;
 
         Path filepath = Paths.get("resources", "generated", d + "D_" + n + ".txt");
-        DataGenerator.generateRandom(filepath, d, n, 10, random);
+        // DataGenerator.generateRandom(filepath, d, n, 10, random);
 
         // Path filepath = Paths.get("resources", "fasttext", "dk-300d.txt");
 

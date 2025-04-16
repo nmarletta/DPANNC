@@ -8,6 +8,7 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.Set;
 
+import dpannc.DistMapper;
 import dpannc.NashDevice;
 import dpannc.Progress;
 import dpannc.AIMN.AIMN;
@@ -18,10 +19,11 @@ public class AIMNexperiments {
 
     public static void main(String[] args) throws Exception {
         // expAIMN();
+        exp3();
     }
 
     public static void exp1() throws Exception {
-        String name = "AIMN_check";
+        String name = "aimn1";
         DB db = new DB("DB/AIMN_" + name, true);
 
         int SEED = 100;
@@ -171,7 +173,7 @@ public class AIMNexperiments {
     }
 
     public static void exp2() throws Exception {
-        String name = "AIMN_c-values";
+        String name = "aimn2";
         DB db = new DB("DB/AIMN_" + name, true);
 
         int SEED = 100;
@@ -213,9 +215,9 @@ public class AIMNexperiments {
             }, table);
             Progress.updateBar(++pg);
 
-            double inner_brute, inner_count, inner_TP, inner_FN, inner_FP, 
+            double inner_brute, inner_count, inner_TP, inner_FN, inner_FP,
                     inner_f1Total, inner_precisionTotal, inner_recallTotal;
-            double fuzzy_brute, fuzzy_count, fuzzy_TP, fuzzy_FN, fuzzy_FP, 
+            double fuzzy_brute, fuzzy_count, fuzzy_TP, fuzzy_FN, fuzzy_FP,
                     fuzzy_f1Total, fuzzy_precisionTotal, fuzzy_recallTotal;
 
             for (double c : cValues) {
@@ -226,10 +228,8 @@ public class AIMNexperiments {
                 aimn.populateFromDB(table, db);
                 Progress.updateBar(++pg);
 
-                inner_brute = inner_count = inner_TP = inner_FN = inner_FP = 
-                inner_f1Total = inner_precisionTotal = inner_recallTotal = 0;
-                fuzzy_brute = fuzzy_count = fuzzy_TP = fuzzy_FN = fuzzy_FP = 
-                fuzzy_f1Total = fuzzy_precisionTotal = fuzzy_recallTotal = 0;
+                inner_brute = inner_count = inner_TP = inner_FN = inner_FP = inner_f1Total = inner_precisionTotal = inner_recallTotal = 0;
+                fuzzy_brute = fuzzy_count = fuzzy_TP = fuzzy_FN = fuzzy_FP = fuzzy_f1Total = fuzzy_precisionTotal = fuzzy_recallTotal = 0;
                 double outer_count = 0;
                 double total_count = 0;
 
@@ -268,8 +268,8 @@ public class AIMNexperiments {
                     inner_brute += (double) B_inner.size() / reps;
                     inner_count += (double) A_inner.size() / reps;
                     inner_TP += inner_intersection / reps;
-                    inner_FN += ((double) A_inner.size() - inner_intersection) / reps;
-                    inner_FP += ((double) B_inner.size() - inner_intersection) / reps;
+                    inner_FP += ((double) A_inner.size() - inner_intersection) / reps;
+                    inner_FN += ((double) B_inner.size() - inner_intersection) / reps;
                     inner_f1Total += inner_f1 / reps;
                     inner_precisionTotal += inner_precision / reps;
                     inner_recallTotal += inner_recall / reps;
@@ -294,8 +294,8 @@ public class AIMNexperiments {
                     fuzzy_brute += (double) B_fuzzy.size() / reps;
                     fuzzy_count += (double) A_fuzzy.size() / reps;
                     fuzzy_TP += fuzzy_intersection / reps;
-                    fuzzy_FN += ((double) A_fuzzy.size() - fuzzy_intersection) / reps;
-                    fuzzy_FP += ((double) B_fuzzy.size() - fuzzy_intersection) / reps;
+                    fuzzy_FP += ((double) A_fuzzy.size() - fuzzy_intersection) / reps;
+                    fuzzy_FN += ((double) B_fuzzy.size() - fuzzy_intersection) / reps;
                     fuzzy_f1Total += fuzzy_f1 / reps;
                     fuzzy_precisionTotal += fuzzy_precision / reps;
                     fuzzy_recallTotal += fuzzy_recall / reps;
@@ -310,6 +310,170 @@ public class AIMNexperiments {
                 writer.write(String.format(Locale.US,
                         "%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f\n",
                         c, inner_brute, inner_count, inner_TP, inner_FN, inner_FP, inner_f1Total, inner_precisionTotal,
+                        inner_recallTotal,
+                        fuzzy_brute, fuzzy_count, fuzzy_TP, fuzzy_FN, fuzzy_FP,
+                        fuzzy_f1Total, fuzzy_precisionTotal, fuzzy_recallTotal, outer_count, total_count));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        Progress.end();
+    }
+
+    public static void exp3() throws Exception {
+        String name = "aimn3";
+        DB db = new DB("DB/AIMN_" + name, true);
+
+        int SEED = 100;
+        Random random = new Random(SEED);
+        int n = 10_000;
+        int d = 300;
+        double c = 1.5;
+
+        int reps = 10;
+        double[] rValues = new double[] { 0.2, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0 };
+
+        double sensitivity = 1.0;
+        double epsilon = 2.0;
+        double delta = 0.0001;
+
+        Progress.newBar("Experiment " + name, (1 + (3 + reps) * rValues.length));
+        int pg = 0;
+
+        Path filepathSource = Paths.get("app/resources/fasttext/english_2M_300D.txt").toAbsolutePath();
+        Path filepathTarget = Paths.get("app/results/AIMN/" + name + ".csv");
+        try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
+            // CSV header
+            writer.write("initial distance from q / found vectors\n"); // title
+            writer.write("0\n"); // coulmns on x-axis
+            writer.write("1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18\n"); // columns on y-axis
+            writer.write(
+                    "r_i, r_a, r_n, inner_actual, inner_count, inner_TP, inner_FN, inner_FP, inner_f1Total, inner_precisionTotal, inner_recallTotal, fuzzy_actual, fuzzy_count, fuzzy_TP, fuzzy_FN, fuzzy_FP, fuzzy_f1Total, fuzzy_precisionTotal, fuzzy_recallTotal, outer, total\n");
+
+            double inner_brute, inner_count, inner_TP, inner_FN, inner_FP,
+                    inner_f1Total, inner_precisionTotal, inner_recallTotal;
+            double fuzzy_brute, fuzzy_count, fuzzy_TP, fuzzy_FN, fuzzy_FP,
+                    fuzzy_f1Total, fuzzy_precisionTotal, fuzzy_recallTotal;
+
+            String table1 = "Initialvectors";
+            db.loadVectorsIntoDB(table1, filepathSource, n, d);
+            Progress.updateBar(++pg);
+
+            for (double r_i : rValues) {
+                // initiate AIMN
+                AIMN aimn = new AIMN(n, d, c, sensitivity, epsilon, delta, db);
+                Progress.printAbove(aimn.getSettingsString());
+                aimn.DP(false);
+
+                // load vectors to DB
+                String table2 = "TransformedVectors";
+                db.loadVectorsIntoDB(table2, filepathSource, n, d);
+                Progress.updateBar(++pg);
+
+                // find new r
+                double r_a = aimn.getR();
+                double scale = r_i / r_a;
+
+                // transform vectors
+                NashDevice nd = new NashDevice(d, d, random);
+                db.applyTransformation(data -> {
+                    Vector v = Vector.fromString(".", data);
+                    v.multiply(scale);
+                    v = nd.transform(v);
+                    // v.normalize();
+                    return v.dataString();
+                }, table2);
+                Progress.updateBar(++pg);
+
+                double r_n = DistMapper.getMedian(scale);
+
+                // populate AIMN
+                aimn.populateFromDB(table2, db);
+                Progress.updateBar(++pg);
+
+                inner_brute = inner_count = inner_TP = inner_FN = inner_FP = inner_f1Total = inner_precisionTotal = inner_recallTotal = 0;
+                fuzzy_brute = fuzzy_count = fuzzy_TP = fuzzy_FN = fuzzy_FP = fuzzy_f1Total = fuzzy_precisionTotal = fuzzy_recallTotal = 0;
+                double outer_count = 0;
+                double total_count = 0;
+
+                // experiment
+                for (int i = 0; i < reps; i++) {
+                    // choose and run query
+                    Progress.newStatus("Querying...");
+                    Vector q1 = db.getRandomVector(table1, random);
+                    Vector q2 = db.getVectorByLabel(q1.getLabel(), table2);
+                    int count = aimn.query(q2);
+                    List<String> queryList = aimn.queryList();
+                    Progress.clearStatus();
+                    // calculate all distances
+                    Result AIMNres = new Result().loadDistancesBetween(q2, queryList, table2, db);
+                    Result BRUTEres = new Result().loadDistancesBetween(q1, table1, db);
+
+                    // INNER REGION results
+                    Set<String> A_inner = AIMNres.lessThan(r_n);
+                    Set<String> B_inner = BRUTEres.lessThan(r_n);
+
+                    Set<String> inner_intersectionSet = new HashSet<String>(A_inner);
+                    inner_intersectionSet.retainAll(B_inner);
+                    double inner_intersection = inner_intersectionSet.size();
+
+                    // Set<String> inner_unionSet = new HashSet<String>(A_inner);
+                    // inner_unionSet.addAll(B_inner);
+                    // double inner_union = inner_unionSet.size();
+
+                    // TP/(TP+FP)
+                    double inner_precision = (B_inner.size() == 0) ? 0 : (double) inner_intersection / B_inner.size();
+                    // TP/(TP+FN)
+                    double inner_recall = (A_inner.size() == 0) ? 0 : (double) inner_intersection / A_inner.size();
+                    double inner_f1 = (inner_precision + inner_recall == 0) ? 0
+                            : 2 * inner_precision * inner_recall / (inner_precision + inner_recall);
+
+                    inner_brute += (double) B_inner.size() / reps;
+                    inner_count += (double) A_inner.size() / reps;
+                    inner_TP += inner_intersection / reps;
+                    inner_FP += ((double) A_inner.size() - inner_intersection) / reps;
+                    inner_FN += ((double) B_inner.size() - inner_intersection) / reps;
+                    inner_f1Total += inner_f1 / reps;
+                    inner_precisionTotal += inner_precision / reps;
+                    inner_recallTotal += inner_recall / reps;
+
+                    // FUZZY REGION results
+                    Set<String> A_fuzzy = AIMNres.within(r_n, c * r_n);
+                    Set<String> B_fuzzy = BRUTEres.within(r_n, c * r_n);
+
+                    Set<String> fuzzy_intersectionSet = new HashSet<String>(A_fuzzy);
+                    fuzzy_intersectionSet.retainAll(B_fuzzy);
+                    double fuzzy_intersection = fuzzy_intersectionSet.size();
+
+                    // Set<String> fuzzy_unionSet = new HashSet<String>(A_fuzzy);
+                    // fuzzy_unionSet.addAll(B_fuzzy);
+                    // double fuzzy_union = fuzzy_unionSet.size();
+
+                    double fuzzy_precision = (B_fuzzy.size() == 0) ? 0 : (double) fuzzy_intersection / B_fuzzy.size();
+                    double fuzzy_recall = (A_fuzzy.size() == 0) ? 0 : (double) fuzzy_intersection / A_fuzzy.size();
+                    double fuzzy_f1 = (fuzzy_precision + fuzzy_recall == 0) ? 0
+                            : 2 * fuzzy_precision * fuzzy_recall / (fuzzy_precision + fuzzy_recall);
+
+                    fuzzy_brute += (double) B_fuzzy.size() / reps;
+                    fuzzy_count += (double) A_fuzzy.size() / reps;
+                    fuzzy_TP += fuzzy_intersection / reps;
+                    fuzzy_FP += ((double) A_fuzzy.size() - fuzzy_intersection) / reps;
+                    fuzzy_FN += ((double) B_fuzzy.size() - fuzzy_intersection) / reps;
+                    fuzzy_f1Total += fuzzy_f1 / reps;
+                    fuzzy_precisionTotal += fuzzy_precision / reps;
+                    fuzzy_recallTotal += fuzzy_recall / reps;
+
+                    outer_count = (AIMNres.size() - A_inner.size() - A_fuzzy.size()) / reps;
+                    total_count = AIMNres.size() / reps;
+
+                    Progress.updateBar(++pg);
+                }
+
+                // write result to file
+                writer.write(String.format(Locale.US,
+                        "%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f\n",
+                        r_i, r_a, r_n, inner_brute, inner_count, inner_TP, inner_FN, inner_FP, inner_f1Total,
+                        inner_precisionTotal,
                         inner_recallTotal,
                         fuzzy_brute, fuzzy_count, fuzzy_TP, fuzzy_FN, fuzzy_FP,
                         fuzzy_f1Total, fuzzy_precisionTotal, fuzzy_recallTotal, outer_count, total_count));
