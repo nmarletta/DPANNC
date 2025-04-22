@@ -12,7 +12,7 @@ public class DataPrepare {
     public static void main(String[] args) {
         // MNISTcsv2txt();
         truncateVectors();
-        nashVectors();
+        // nashVectors();
     }
 
     public static void MNISTcsv2txt() {
@@ -61,15 +61,15 @@ public class DataPrepare {
     }
 
     public static void truncateVectors() {
-        String nameSource = "english_2M_300D";
-        Path filepathSource = Paths.get("app/resources/fasttext", nameSource + ".txt");
+        String nameSource = "fashionMNIST_60K_784D";
+        Path filepathSource = Paths.get("app/resources/fashionMNIST", nameSource + ".txt");
 
         int n = 500_000;
         int[] dimensions = new int[] { 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100, 150, 200,
-                250 };
+                250, 500 };
         for (int d : dimensions) {
-            String nameTarget = "trun_english_500K_" + d;
-            Path filepathTarget = Paths.get("app/resources/fasttext/truncated", nameTarget + ".txt");
+            String nameTarget = "trun_fashionMNIST_60K_" + d + "D";
+            Path filepathTarget = Paths.get("app/resources/fashionMNIST/truncated", nameTarget + ".txt");
             try {
                 Files.createDirectories(filepathTarget.getParent());
                 FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString());
@@ -92,7 +92,7 @@ public class DataPrepare {
     }
 
     public static void nashVectors() {
-        String nameSource = "english_2M_300D";
+        String nameSource = "fashionMNIST_60K_784D";
         Path filepathSource = Paths.get("app/resources/fasttext", nameSource + ".txt");
 
         int n = 500_000;
@@ -101,8 +101,8 @@ public class DataPrepare {
 
         Random random = new Random(100);
         for (int d : dimensions) {
-            String nameTarget = "nash_english_500K_" + d;
-            Path filepathTarget = Paths.get("app/resources/fasttext/nashed", nameTarget + ".txt");
+            String nameTarget = "nash_fashionMNIST_60K_" + d + "D";
+            Path filepathTarget = Paths.get("app/resources/fashionMNIST/nashed", nameTarget + ".txt");
             NashDevice nd = new NashDevice(300, d, random);
             try {
                 Files.createDirectories(filepathTarget.getParent());

@@ -8,6 +8,7 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.Set;
 
+import dpannc.DistMapper;
 import dpannc.NashDevice;
 import dpannc.Progress;
 import dpannc.AIMN.AIMN;
@@ -130,14 +131,8 @@ public class AIMNexperiments {
                 // fuzzy_unionSet.addAll(B_fuzzy);
                 // double fuzzy_union = fuzzy_unionSet.size();
 
-                double fuzzy_precision = (B_fuzzy.size() == 0) ? 0 : (double) fuzzy_intersection / B_fuzzy.size(); // TP
-                                                                                                                   // /
-                                                                                                                   // (TP
-                                                                                                                   // +
-                                                                                                                   // FP)
-                double fuzzy_recall = (A_fuzzy.size() == 0) ? 0 : (double) fuzzy_intersection / A_fuzzy.size(); // TP /
-                                                                                                                // (TP +
-                                                                                                                // FN)
+                double fuzzy_precision = (B_fuzzy.size() == 0) ? 0 : (double) fuzzy_intersection / B_fuzzy.size();
+                double fuzzy_recall = (A_fuzzy.size() == 0) ? 0 : (double) fuzzy_intersection / A_fuzzy.size();
                 double fuzzy_f1 = (fuzzy_precision + fuzzy_recall == 0) ? 0
                         : 2 * fuzzy_precision * fuzzy_recall / (fuzzy_precision + fuzzy_recall);
 
@@ -219,6 +214,7 @@ public class AIMNexperiments {
                     fuzzy_f1Total, fuzzy_precisionTotal, fuzzy_recallTotal;
 
             for (double c : cValues) {
+                random = new Random(SEED);
                 // initiate AIMN and populate
                 AIMN aimn = new AIMN(n, d, c, sensitivity, epsilon, delta, db);
                 Progress.printAbove(aimn.getSettingsString());
@@ -331,8 +327,7 @@ public class AIMNexperiments {
         double c = 1.2;
 
         int reps = 1;
-        double[] rValues = new double[] { 800.0, 1000.0, 1200.0, 1400.0, 1600.0, 1800.0, 2000.0, 2200.0, 2400.0, 2600.0,
-                2800.0, 3000.0 };
+        double[] rValues = new double[] { 300.0, 350.0, 400.0, 450.00, 500.0, 550.00, 600.0, 650.0, 700.0 };
 
         double sensitivity = 1.0;
         double epsilon = 2.0;
@@ -351,7 +346,7 @@ public class AIMNexperiments {
             writer.write("0\n"); // coulmns on x-axis
             writer.write("1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18\n"); // columns on y-axis
             writer.write(
-                    "r_i, r_a, r_n, inner_actual, inner_count, inner_TP, inner_FN, inner_FP, inner_f1Total, inner_precisionTotal, inner_recallTotal, fuzzy_actual, fuzzy_count, fuzzy_TP, fuzzy_FN, fuzzy_FP, fuzzy_f1Total, fuzzy_precisionTotal, fuzzy_recallTotal, outer, total\n");
+                    "r_i, r_aimn, r_target, inner_actual, inner_count, inner_TP, inner_FN, inner_FP, inner_f1Total, inner_precisionTotal, inner_recallTotal, fuzzy_actual, fuzzy_count, fuzzy_TP, fuzzy_FN, fuzzy_FP, fuzzy_f1Total, fuzzy_precisionTotal, fuzzy_recallTotal, outer, total\n");
 
             double inner_brute_total, inner_count_total, inner_TP_total, inner_FN_total, inner_FP_total,
                     inner_f1_total, inner_precision_total, inner_recall_total;
@@ -374,18 +369,19 @@ public class AIMNexperiments {
                 Progress.updateBar(++pg);
 
                 // find new r
-                double r_a = aimn.getR(); // the fixed radius that we should fit the data to
-                double r_n = r_a / 0.64; // the desired radius for pre nash transformation
-                double scale = r_n / r_i; // scaling factor
-
+                double r_aimn = aimn.getR(); // the fixed radius that we should fit the data to
+                double r_target = r_aimn / DistMapper.getP95Rev(r_aimn); // the desired radius for pre nash transformation
+                double scale = r_target / r_i; // scaling factor
+                Progress.printAbove("(r_n): " + r_target + "=" + r_aimn + "/" + DistMapper.getMedianRev(r_aimn));
+                Progress.printAbove("scale: " + scale + "=" + r_target + "/" + r_i);
                 // transform vectors
                 NashDevice nd = new NashDevice(d, d, random);
                 db.applyTransformation(data -> {
                     Vector v = Vector.fromString(".", data);
                     v.multiply(scale);
-                    v = nd.transform(v);
+                    Vector w = nd.transform(v);
                     // v.normalize();
-                    return v.dataString();
+                    return w.dataString();
                 }, table2);
                 Progress.updateBar(++pg);
 
@@ -418,7 +414,7 @@ public class AIMNexperiments {
 
                     // INNER REGION results
                     Set<String> B_inner = BRUTEres.lessThan(r_i); // initial r for raw dataset
-                    Set<String> A_inner = AIMNres.lessThan(r_a); // AIMNs r for transformed dataset
+                    Set<String> A_inner = AIMNres.lessThan(r_aimn); // AIMNs r for transformed dataset
 
                     Set<String> inner_intersectionSet = new HashSet<String>(A_inner);
                     inner_intersectionSet.retainAll(B_inner);
@@ -444,7 +440,7 @@ public class AIMNexperiments {
 
                     // FUZZY REGION results
                     Set<String> B_fuzzy = BRUTEres.within(r_i, c * r_i);
-                    Set<String> A_fuzzy = AIMNres.within(r_a, c * r_a);
+                    Set<String> A_fuzzy = AIMNres.within(r_aimn, c * r_aimn);
 
                     Set<String> fuzzy_intersectionSet = new HashSet<String>(A_fuzzy);
                     fuzzy_intersectionSet.retainAll(B_fuzzy);
@@ -478,7 +474,7 @@ public class AIMNexperiments {
                 // write result to file
                 writer.write(String.format(Locale.US,
                         "%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f\n",
-                        r_i, r_a, r_n, inner_brute_total, inner_count_total, inner_TP_total, inner_FN_total,
+                        r_i, r_aimn, r_target, inner_brute_total, inner_count_total, inner_TP_total, inner_FN_total,
                         inner_FP_total,
                         inner_f1_total, inner_precision_total, inner_recall_total,
                         fuzzy_brute_total, fuzzy_count_total, fuzzy_TP_total, fuzzy_FN_total, fuzzy_FP_total,

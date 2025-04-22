@@ -18,9 +18,11 @@ import dpannc.database.DB;
 public class DistMapper {
 
     private static PolynomialSplineFunction meanSpline;
-    private static PolynomialSplineFunction stddevSpline;
+    private static PolynomialSplineFunction meanSplineRev;
     private static PolynomialSplineFunction p95Spline;
+    private static PolynomialSplineFunction p95SplineRev;
     private static PolynomialSplineFunction medianSpline;
+    private static PolynomialSplineFunction medianSplineRev;
 
     static {
         try {
@@ -37,30 +39,27 @@ public class DistMapper {
         ArrayList<Double> rList = new ArrayList<>();
         ArrayList<Double> medianList = new ArrayList<>();
         ArrayList<Double> meanList = new ArrayList<>();
-        ArrayList<Double> stddevList = new ArrayList<>();
         ArrayList<Double> p95List = new ArrayList<>();
 
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             String line;
 
-            // Skip headers
+            // skip headers
             while ((line = br.readLine()) != null) {
                 if (line.startsWith("#") || line.startsWith("initial"))
                     continue;
                 String[] parts = line.split(",");
-                if (parts.length < 6)
+                if (parts.length < 5)
                     continue;
 
                 double r = Double.parseDouble(parts[0]);
                 double median = Double.parseDouble(parts[1]);
                 double mean = Double.parseDouble(parts[2]);
-                double stddev = Double.parseDouble(parts[3]);
-                double p95 = Double.parseDouble(parts[5]);
+                double p95 = Double.parseDouble(parts[4]);
 
                 rList.add(r);
                 medianList.add(median);
                 meanList.add(mean);
-                stddevList.add(stddev);
                 p95List.add(p95);
             }
         }
@@ -69,9 +68,11 @@ public class DistMapper {
         double[] r = rList.stream().mapToDouble(Double::doubleValue).toArray();
 
         medianSpline = interpolator.interpolate(r, medianList.stream().mapToDouble(Double::doubleValue).toArray());
+        medianSplineRev = interpolator.interpolate(medianList.stream().mapToDouble(Double::doubleValue).toArray(), r);
         meanSpline = interpolator.interpolate(r, meanList.stream().mapToDouble(Double::doubleValue).toArray());
-        stddevSpline = interpolator.interpolate(r, stddevList.stream().mapToDouble(Double::doubleValue).toArray());
+        meanSplineRev = interpolator.interpolate(meanList.stream().mapToDouble(Double::doubleValue).toArray(), r);
         p95Spline = interpolator.interpolate(r, p95List.stream().mapToDouble(Double::doubleValue).toArray());
+        p95SplineRev = interpolator.interpolate(p95List.stream().mapToDouble(Double::doubleValue).toArray(), r);
     }
 
     // Accessors
@@ -87,22 +88,78 @@ public class DistMapper {
             return Double.NaN; 
         }
     }
+    public static double getMedianRev(double r) {
+        try {
+            if (medianSplineRev == null) {
+                throw new IllegalStateException("medianSplineRev is not initialized.");
+            }
+            return medianSplineRev.value(r);
+        } catch (Exception e) {
+            System.err.println("DistMapper.getMedianRev() failed for r = " + r + ": " + e.getMessage());
+            e.printStackTrace();
+            return Double.NaN; 
+        }
+    }
 
     public static double getMean(double r) {
-        return meanSpline.value(r);
+        try {
+            if (meanSpline == null) {
+                throw new IllegalStateException("meanSpline is not initialized.");
+            }
+            return meanSpline.value(r);
+        } catch (Exception e) {
+            System.err.println("DistMapper.getMean() failed for r = " + r + ": " + e.getMessage());
+            e.printStackTrace();
+            return Double.NaN; 
+        }
     }
 
-    public static double getStddev(double r) {
-        return stddevSpline.value(r);
+    public static double getMeanRev(double r) {
+        try {
+            if (meanSplineRev == null) {
+                throw new IllegalStateException("meanSplineRev is not initialized.");
+            }
+            return meanSplineRev.value(r);
+        } catch (Exception e) {
+            System.err.println("DistMapper.getMeanRev() failed for r = " + r + ": " + e.getMessage());
+            e.printStackTrace();
+            return Double.NaN; 
+        }
     }
+
 
     public static double getP95(double r) {
-        return p95Spline.value(r);
+        try {
+            if (p95Spline == null) {
+                throw new IllegalStateException("p95Spline is not initialized.");
+            }
+            return p95Spline.value(r);
+        } catch (Exception e) {
+            System.err.println("DistMapper.getP95() failed for r = " + r + ": " + e.getMessage());
+            e.printStackTrace();
+            return Double.NaN; 
+        }
+    }
+
+    public static double getP95Rev(double r) {
+        try {
+            if (p95SplineRev == null) {
+                throw new IllegalStateException("p95SplineRev is not initialized.");
+            }
+            return p95SplineRev.value(r);
+        } catch (Exception e) {
+            System.err.println("DistMapper.getP95Rev() failed for r = " + r + ": " + e.getMessage());
+            e.printStackTrace();
+            return Double.NaN; 
+        }
     }
 
     public static void main(String args[]) throws Exception {
         // System.out.println(get(0.35));
-        exp();
+        double a = 0.822;
+        double median = DistMapper.getMedian(a);
+        System.out.println(median);
+        // exp();
     }
 
     public static void exp() throws Exception {
@@ -125,11 +182,10 @@ public class DistMapper {
             for (double r = min; r <= max; r += inc) {
                 double median = DistMapper.getMedian(r);
                 double mean = DistMapper.getMean(r);
-                double stddev = DistMapper.getStddev(r);
                 double p95 = DistMapper.getP95(r);
 
-                writer.write(String.format(Locale.US, "%.5f,%.5f,%.5f,%.5f,%.5f\n",
-                        r, median, mean, stddev, p95));
+                writer.write(String.format(Locale.US, "%.5f,%.5f,%.5f,%.5f\n",
+                        r, median, mean, p95));
             }
 
         } catch (IOException e) {

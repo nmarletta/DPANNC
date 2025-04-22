@@ -396,4 +396,16 @@ public class Vector {
                 .toArray();
         return new Vector(components).setLabel(label);
     }
+
+    /**
+     * Returns a Vector parsed from String.
+     *
+     * @return a Vector object with the .
+     */
+    public static Vector fromString(String data) {
+        double[] components = Arrays.stream(data.split(" "))
+                .mapToDouble(Double::parseDouble)
+                .toArray();
+        return new Vector(components);
+    }
 }

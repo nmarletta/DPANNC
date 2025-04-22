@@ -40,5 +40,14 @@ public class NashDevice {
         Vector v = new Vector(transformedComponents).multiply(scale);
         return v.setLabel(x.getLabel());
     }
+    
+    public static void main(String[] args) {
+        Random random = new Random();
+        int d = 10;
+        NashDevice nd = new NashDevice(d, d, random);
+        Vector v = new Vector(d).randomGaussian(random).setMagnitude(2);
+        Vector w = nd.transform(v);
+        System.out.println(w.magnitude());
+    }
 }
 

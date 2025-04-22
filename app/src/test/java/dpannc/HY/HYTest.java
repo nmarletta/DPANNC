@@ -8,20 +8,24 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 
 import dpannc.Vector;
+import dpannc.database.DB;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class HYTest {
+    DB db;
     private HY hy;
-    private static final double EPSILON = 1e-9;
+    private static final double E = 1e-9;
 
     @BeforeEach
     void setUp() {
-        hy = new HY(1.0, 0.05, 0.01); // Example sensitivity, epsilon, and delta
+        db = new DB(":memory:", false);
+        hy = new HY(1.0, 0.05, 0.01, db);
     }
 
     @Test
@@ -55,58 +59,34 @@ class HYTest {
 
         // Check contents of loaded vectors
         Vector first = loadedData.iterator().next();
-        assertArrayEquals(new double[]{1.0, 2.0, 3.0}, first.get(), EPSILON);
+        assertArrayEquals(new double[] { 1.0, 2.0, 3.0 }, first.get(), E);
     }
 
     @Test
-    void testPrintTree(@TempDir Path tempDir) throws Exception {
-        File tempFile = tempDir.resolve("test_data.txt").toFile();
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
-            writer.write("a 1.0 2.0 3.0\n");
-            writer.write("b 4.0 5.0 6.0\n");
-            writer.write("c 7.0 8.0 9.0\n");
-        }
+    void testShrink() {
+        Collection<Vector> dataset = new ArrayList<>();
+        dataset.add(new Vector(new double[] { -9.0, 10.0 }));
+        dataset.add(new Vector(new double[] { 9.0, -10.0 }));
+        dataset.add(new Vector(new double[] { 5.0, 5.0 }));
+        dataset.add(new Vector(new double[] { -5.0, -5.0 }));
+        dataset.add(new Vector(new double[] { -2.0, -3.0 }));
+        dataset.add(new Vector(new double[] { 4.0, -6.0 }));
+        dataset.add(new Vector(new double[] { 7.0, -2.0 }));
 
-        hy.populateFromFile(3, 3, tempFile.toPath());
+        Box rootBox = new Box(2, dataset);
+        HY.Cell root = new HY(1.0, 0.00005, 0.01, db).new Cell(rootBox);
 
-        // Redirect System.out to capture output
-        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
-        System.setOut(new java.io.PrintStream(out));
+        assertNotNull(root, "root cell is null");
+        assertEquals(7, root.count, "initial count not correct");
+        // Box left = root.outer;
+        Box[] shrinkResult = root.shrink(0, 0.01);
+        assertNotNull(shrinkResult[0], "outer should not be null");
+        assertNotNull(shrinkResult[1], "inner should not be null");
 
-        hy.print(); // Calls printTree()
+        Box outer = shrinkResult[0];
+        Box inner = shrinkResult[1];
+        assertEquals(4, outer.count);
+        assertEquals(3, inner.count);
 
-        String output = out.toString().trim();
-        assertFalse(output.isEmpty(), "printTree should produce output");
     }
-
-    // @Test
-    // void testShrink() {
-    //     hy.DP(false);
-    //     Collection<Vector> dataset = new ArrayList<>();
-    //     dataset.add(new Vector(new double[]{-9.0, 10.0}));
-    //     dataset.add(new Vector(new double[]{9.0, -10.0}));
-    //     dataset.add(new Vector(new double[]{5.0, 5.0}));
-    //     dataset.add(new Vector(new double[]{-5.0, -5.0}));
-    //     dataset.add(new Vector(new double[]{-2.0, -3.0}));
-    //     dataset.add(new Vector(new double[]{4.0, -6.0}));
-    //     dataset.add(new Vector(new double[]{7.0, -2.0}));
-
-    //     Box rootBox = new Box(2, dataset);
-    //     HY.Cell root = new HY(1.0, 0.00005, 0.01).new Cell(rootBox);
-
-    //     assertNotNull(root, "root cell is null");
-    //     assertEquals(7, root.count, "initial count not correct");
-    //     // Box left = root.outer;
-    //     Box[] shrinkResult = root.shrink(0, 0.01);
-    //     assertNotNull(shrinkResult[0], "outer should not be null");
-    //     assertNotNull(shrinkResult[1], "inner should not be null");
-
-    //     Box outer = shrinkResult[0];
-    //     Box inner = shrinkResult[1];
-    //     assertEquals(4, outer.count);
-    //     assertEquals(3, inner.count);
-
-        
-    // }
 }
-

@@ -23,7 +23,7 @@ public class HY {
     private double beta; // failure probability
     private double nt;
 
-    private boolean DP = true; // differential privacy
+    private boolean DP = false; // differential privacy
     private Random random = new Random(100);
     private Noise noise = new Noise(100);
     private Cell root;
@@ -52,8 +52,7 @@ public class HY {
         List<Vector> dataset = new ArrayList<Vector>();
         this.d = d;
         this.n = n;
-        nt = DP ? n + (4 / epsilon) * log(2 / beta, 10) + noise.Lap(4 / epsilon) : n; // ONLY NOISE OR ALSO THE OTHER
-                                                                                      // THINGS???
+        nt = DP ? n + (4 / epsilon) * log(2 / beta, 10) + noise.Lap(4 / epsilon) : n;
         H = log(nt, 10);
 
         DBiterator it = db.iterator(table);
@@ -74,8 +73,7 @@ public class HY {
         Collection<Vector> dataset = loadfile(n, filepath);
         this.d = d;
         this.n = n;
-        nt = DP ? n + (4 / epsilon) * log(2 / beta, 10) + noise.Lap(4 / epsilon) : n; // ONLY NOISE OR ALSO THE OTHER
-                                                                                      // THINGS???
+        nt = DP ? n + (4 / epsilon) * log(2 / beta, 10) + noise.Lap(4 / epsilon) : n; 
         H = log(nt, 10);
         Box b = new Box(d, dataset);
         root = new Cell(b);
@@ -106,6 +104,7 @@ public class HY {
             inner = null;
             count = box.count;
             size = box.size;
+            isLeaf = count < 1 || size < 1 ? true : false;
         }
 
         public Cell(Box outerBox, Box innerBox) {
@@ -114,6 +113,7 @@ public class HY {
             inner = innerBox;
             count = outer.count;
             size = outer.size;
+            isLeaf = count < 1 || size < 1 ? true : false;
         }
 
         public double size() {
@@ -147,11 +147,12 @@ public class HY {
         }
 
         public void recShrink(int h, double beta) {
+            if (isLeaf) return;
             Box[] shrinkResult = null;
-            int i = 1;
+            int i = 0;
             while (shrinkResult == null) {
-                shrinkResult = shrink(h + i, beta);
                 i++;
+                shrinkResult = shrink(h + i, beta);
             }
 
             if (shrinkResult[1] == null) {
@@ -161,25 +162,17 @@ public class HY {
 
             left = new Cell(shrinkResult[0], shrinkResult[1]); // outer minus inner
             right = new Cell(shrinkResult[1]); // inner
-
-            if (left.count > 1 && left.size > 1)
-                left.split(h);
-            if (right.count > 1 && right.size > 1)
-                right.split(h);
+            left.split(h+i);
+            right.split(h+i);
         }
 
         public void split(int h) {
+            if (isLeaf) return;
             Box[] split = outer.split();
             left = new Cell(split[0]);
             right = new Cell(split[1]);
-
-            if (left.count > 1 && left.size > 1) {
-                left.recShrink(h, beta);
-            }
-
-            if (right.count > 1 && right.size > 1) {
-                right.recShrink(h, beta);
-            }
+            left.recShrink(h, beta);
+            right.recShrink(h, beta);
         }
 
         public Box[] shrink(int h, double beta) {

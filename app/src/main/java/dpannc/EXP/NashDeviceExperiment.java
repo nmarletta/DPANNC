@@ -23,10 +23,10 @@ public class NashDeviceExperiment {
         // exp2();
         // exp3();
         // exp4();
-        exp5();
+        // exp5();
         // exp6();
         // exp7();
-        // exp8();
+        exp9();
         // distMap();
     }
 
@@ -312,6 +312,7 @@ public class NashDeviceExperiment {
 
                 // double rPrime = DistMapper.getP95(r);
                 double rPrime = DistMapper.getMedian(r);
+                
 
                 double brute = 0;
                 double trueFound = 0;
@@ -649,12 +650,12 @@ public class NashDeviceExperiment {
         // settings
         int SEED = 10;
         Random random = new Random(SEED);
-        int n = 100; // sample size
-        int d = 300;
+        int n = 1000; // sample size
+        int d = 784;
 
-        double min = 0.001;
-        double max = 5;
-        double inc = 0.05;
+        double min = 1.1;
+        double max = 1.4;
+        double inc = 0.02;
 
         NashDevice nd = new NashDevice(d, d, random);
 
@@ -663,8 +664,8 @@ public class NashDeviceExperiment {
             // CSV header
             writer.write("initial distance / transformed distance distribution\n");
             writer.write("0\n");
-            writer.write("1,2,3,4,5\n");
-            writer.write("initial,median,mean,stddev,p5,p95\n");
+            writer.write("1,2,3,4\n");
+            writer.write("initial,median,mean,p5,p95\n");
 
             for (double dist = min; dist < max; dist += inc) {
                 Result transformedDists = new Result();
@@ -682,12 +683,11 @@ public class NashDeviceExperiment {
                 // collect stats
                 double median = transformedDists.median();
                 double mean = transformedDists.mean();
-                double msd = transformedDists.stddev();
                 double p5 = transformedDists.percentile(0.05);
                 double p95 = transformedDists.percentile(0.95);
 
-                writer.write(String.format(Locale.US, "%.5f,%.5f,%.5f,%.5f,%.5f,%.5f\n",
-                        dist, median, mean, msd, p5, p95));
+                writer.write(String.format(Locale.US, "%.5f,%.5f,%.5f,%.5f,%.5f\n",
+                        dist, median, mean, p5, p95));
             }
 
             writer.write("# SEED=" + SEED + ", d=" + d + ", n=" + n + "\n");
