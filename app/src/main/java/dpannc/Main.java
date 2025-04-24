@@ -24,9 +24,11 @@ public class Main {
                 case "nash6" -> NashDeviceExperiment.exp6();
                 case "nash8" -> NashDeviceExperiment.exp8();
                 case "nash9" -> NashDeviceExperiment.exp9();
+                case "nash10" -> NashDeviceExperiment.exp10();
                 case "aimn1" -> AIMNexperiments.exp1();
                 case "aimn2" -> AIMNexperiments.exp2();
                 case "aimn3" -> AIMNexperiments.exp3();
+                case "aimn4" -> AIMNexperiments.exp4();
                 case "hy1" -> HYexperiments.exp1();
                 default -> {
                     System.err.println("Unknown experiment: " + experiment);
@@ -36,7 +38,7 @@ public class Main {
 
             String[] plotCommand = switch (experiment) {
                 case "aimn1", "aimn2", "aimn3" -> new String[] { "python3", "plot.py", "aimn", experiment };
-                case "nash1", "nash2", "nash3", "nash4", "nash5", "nash6", "nash7", "nash8", "nash9" -> new String[] { "python3", "plot.py", "nash", experiment };
+                case "nash1", "nash2", "nash3", "nash4", "nash5", "nash6", "nash7", "nash8", "nash9", "nash10" -> new String[] { "python3", "plot.py", "nash", experiment };
                 default -> null;
             };
             

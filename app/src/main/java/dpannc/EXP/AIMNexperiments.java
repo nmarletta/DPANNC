@@ -22,7 +22,7 @@ public class AIMNexperiments {
     }
 
     public static void exp1() throws Exception {
-        String name = "AIMN_check";
+        String name = "aimn1";
         DB db = new DB("DB/AIMN_" + name, true);
 
         int SEED = 100;
@@ -166,14 +166,14 @@ public class AIMNexperiments {
     }
 
     public static void exp2() throws Exception {
-        String name = "AIMN_c-values";
+        String name = "aimn2";
         DB db = new DB("DB/AIMN_" + name, true);
 
         int SEED = 100;
         Random random = new Random(SEED);
         int n = 100_000;
         int d = 300;
-        int reps = 10;
+        int reps = 1;
         double[] cValues = new double[] { 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0 };
 
         double sensitivity = 1.0;
@@ -208,9 +208,9 @@ public class AIMNexperiments {
             }, table);
             Progress.updateBar(++pg);
 
-            double inner_brute, inner_count, inner_TP, inner_FN, inner_FP, 
+            double inner_brute, inner_count, inner_TP, inner_FN, inner_FP,
                     inner_f1Total, inner_precisionTotal, inner_recallTotal;
-            double fuzzy_brute, fuzzy_count, fuzzy_TP, fuzzy_FN, fuzzy_FP, 
+            double fuzzy_brute, fuzzy_count, fuzzy_TP, fuzzy_FN, fuzzy_FP,
                     fuzzy_f1Total, fuzzy_precisionTotal, fuzzy_recallTotal;
 
             for (double c : cValues) {
@@ -222,10 +222,8 @@ public class AIMNexperiments {
                 aimn.populateFromDB(table, db);
                 Progress.updateBar(++pg);
 
-                inner_brute = inner_count = inner_TP = inner_FN = inner_FP = 
-                inner_f1Total = inner_precisionTotal = inner_recallTotal = 0;
-                fuzzy_brute = fuzzy_count = fuzzy_TP = fuzzy_FN = fuzzy_FP = 
-                fuzzy_f1Total = fuzzy_precisionTotal = fuzzy_recallTotal = 0;
+                inner_brute = inner_count = inner_TP = inner_FN = inner_FP = inner_f1Total = inner_precisionTotal = inner_recallTotal = 0;
+                fuzzy_brute = fuzzy_count = fuzzy_TP = fuzzy_FN = fuzzy_FP = fuzzy_f1Total = fuzzy_precisionTotal = fuzzy_recallTotal = 0;
                 double outer_count = 0;
                 double total_count = 0;
 
@@ -296,8 +294,8 @@ public class AIMNexperiments {
                     fuzzy_precisionTotal += fuzzy_precision / reps;
                     fuzzy_recallTotal += fuzzy_recall / reps;
 
-                    outer_count = (AIMNres.size() - A_inner.size() - A_fuzzy.size()) / reps;
-                    total_count = AIMNres.size() / reps;
+                    outer_count += (AIMNres.size() - A_inner.size() - A_fuzzy.size()) / reps;
+                    total_count += AIMNres.size() / reps;
 
                     Progress.updateBar(++pg);
                 }
@@ -324,10 +322,10 @@ public class AIMNexperiments {
         Random random = new Random(SEED);
         int n = 60_000;
         int d = 784;
-        double c = 1.2;
+        double c = 1.5;
 
-        int reps = 1;
-        double[] rValues = new double[] { 300.0, 350.0, 400.0, 450.00, 500.0, 550.00, 600.0, 650.0, 700.0 };
+        int reps = 5;
+        double[] rValues = new double[] { 800.0, 1000.0, 1200.0, 1400.0, 1600.0 };
 
         double sensitivity = 1.0;
         double epsilon = 2.0;
@@ -370,10 +368,11 @@ public class AIMNexperiments {
 
                 // find new r
                 double r_aimn = aimn.getR(); // the fixed radius that we should fit the data to
-                double r_target = r_aimn / DistMapper.getP95Rev(r_aimn); // the desired radius for pre nash transformation
+                double r_target = DistMapper.getMedianRev(r_aimn); // the desired radius for pre nash transformation
                 double scale = r_target / r_i; // scaling factor
-                Progress.printAbove("(r_n): " + r_target + "=" + r_aimn + "/" + DistMapper.getMedianRev(r_aimn));
-                Progress.printAbove("scale: " + scale + "=" + r_target + "/" + r_i);
+                // Progress.printAbove("(r_n): " + r_target + "=" + r_aimn + "/" +
+                // DistMapper.getMedianRev(r_aimn));
+                // Progress.printAbove("scale: " + scale + "=" + r_target + "/" + r_i);
                 // transform vectors
                 NashDevice nd = new NashDevice(d, d, random);
                 db.applyTransformation(data -> {
@@ -384,8 +383,6 @@ public class AIMNexperiments {
                     return w.dataString();
                 }, table2);
                 Progress.updateBar(++pg);
-
-                // double r_n = DistMapper.getMedian(scale);
 
                 // populate AIMN
                 aimn.populateFromDB(table2, db);
@@ -464,9 +461,8 @@ public class AIMNexperiments {
                     fuzzy_precision_total += fuzzy_precision / reps;
                     fuzzy_recall_total += fuzzy_recall / reps;
 
-                    outer_count = ((double) AIMNres.size() - A_inner.size() - A_fuzzy.size()) / reps;
-                    total_count = (double) AIMNres.size() / reps;
-                    if (count != AIMNres.size()) Progress.printAbove(count + " :: " + AIMNres.size());
+                    outer_count += ((double) AIMNres.size() - A_inner.size() - A_fuzzy.size()) / reps;
+                    total_count += (double) AIMNres.size() / reps;
                     Progress.clearStatus();
                     Progress.updateBar(++pg);
                 }
@@ -485,7 +481,133 @@ public class AIMNexperiments {
             writer.write("# Data: " + filepathSource.toString() + "\n");
             writer.write("# SEED=" + SEED + ", dimensions=" + d + ", dataset size=" + n + "\n");
             writer.write("# Average taken over: " + reps + " repetions\n");
-            
+            writer.write("# Nashed value: Median\n");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        Progress.end();
+    }
+
+    public static void exp4() throws Exception {
+        String name = "aimn4";
+        DB db = new DB("DB/AIMN_" + name, true);
+
+        int SEED = 100;
+        Random random = new Random(SEED);
+        int n = 60_000;
+        int d = 784;
+        double c = 1.2;
+
+        int reps = 1;
+        double[] rValues = new double[] { 1000.0, 1200.0, 1400.0, 1600.0, 1800.0, 2000.0 };
+
+        double sensitivity = 1.0;
+        double epsilon = 2.0;
+        double delta = 0.0001;
+
+        Progress.newBar("Experiment " + name, (1 + (3 + reps) * rValues.length));
+        int pg = 0;
+
+        // Path filepathSource = Paths.get("app/resources/fasttext/english_2M_300D.txt").toAbsolutePath();
+        Path filepathSource = Paths.get("app/resources/fashionMNIST/fashionMNIST_60K_784D.txt").toAbsolutePath();
+        Path filepathTarget = Paths.get("app/results/AIMN/" + name + ".csv");
+        try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
+            // CSV header
+            writer.write("initial distance from q / found vectors\n"); // title
+            writer.write("0\n"); // coulmns on x-axis
+            writer.write("1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18\n"); // columns on y-axis
+            writer.write(
+                    "r_i, inner_actual, inner_count, inner_TP, inner_FN, inner_FP, inner_f1Total, inner_precisionTotal, inner_recallTotal, fuzzy_actual, fuzzy_count, fuzzy_TP, fuzzy_FN, fuzzy_FP, fuzzy_f1Total, fuzzy_precisionTotal, fuzzy_recallTotal, outer_actual, outer_count, outer_TP, total\n");
+
+
+            String table1 = "Initialvectors";
+            db.loadVectorsIntoDB(table1, filepathSource, n, d);
+            Progress.updateBar(++pg);
+
+            for (double r_i : rValues) {
+                // initiate AIMN
+                AIMN aimn = new AIMN(n, d, c, sensitivity, epsilon, delta, db);
+                Progress.printAbove(aimn.getSettingsString());
+                aimn.DP(false);
+
+                // load vectors to DB
+                String table2 = "TransformedVectors";
+                db.loadVectorsIntoDB(table2, filepathSource, n, d);
+                Progress.updateBar(++pg);
+
+                // find new r
+                double r_aimn = aimn.getR(); // the fixed radius that we should fit the data to
+                double r_target = DistMapper.getMedianRev(r_aimn); // the desired radius for pre nash transformation
+                double scale = r_target / r_i; // scaling factor
+
+                NashDevice nd = new NashDevice(d, d, random);
+                db.applyTransformation(data -> {
+                    Vector v = Vector.fromString(".", data);
+                    v.multiply(scale);
+                    Vector w = nd.transform(v);
+                    return w.dataString();
+                }, table2);
+                Progress.updateBar(++pg);
+
+                // populate AIMN
+                aimn.populateFromDB(table2, db);
+                Progress.updateBar(++pg);
+
+                Stats inner = new Stats();
+                Stats fuzzy = new Stats();
+                Stats outer = new Stats();
+                double total_count = 0;
+
+                // experiment
+                for (int i = 0; i < reps; i++) {
+                    // choose and run query
+                    Progress.newStatus("Querying...");
+                    Vector q1 = db.getRandomVector(table1, random);
+                    Vector q2 = db.getVectorByLabel(q1.getLabel(), table2);
+                    total_count = aimn.query(q2) / reps;
+                    List<String> queryList = aimn.queryList();
+                    Progress.clearStatus();
+
+                    // calculate all distances
+                    Result BRUTEres = new Result().loadDistancesBetween(q1, table1, db);
+                    Result AIMNres = new Result().loadDistancesBetween(q2, queryList, table2, db);
+
+                    Progress.newStatus("writing results...");
+
+                    // INNER REGION results
+                    Set<String> B_inner = BRUTEres.lessThan(r_i); // initial r for raw dataset
+                    Set<String> A_inner = AIMNres.lessThan(r_aimn); // AIMNs r for transformed dataset
+                    inner.update(B_inner, A_inner);
+
+                    // FUZZY REGION results
+                    Set<String> B_fuzzy = BRUTEres.within(r_i, c * r_i);
+                    Set<String> A_fuzzy = AIMNres.within(r_aimn, c * r_aimn);
+                    fuzzy.update(B_fuzzy, A_fuzzy);
+
+                    // OUTER REGION results
+                    Set<String> B_outer = BRUTEres.greaterThan(c * r_i);
+                    Set<String> A_outer = AIMNres.greaterThan(c * r_aimn);
+                    outer.update(B_outer, A_outer);
+                    
+                    Progress.clearStatus();
+                    Progress.updateBar(++pg);
+                }
+
+                // write result to file
+                writer.write(String.format(Locale.US, "%.1f,%s,%s,%.1f,%.1f,%.1f,%.1f\n",
+                        r_i,
+                        inner.toCSV(),
+                        fuzzy.toCSV(),
+                        outer.toCSV(), total_count));
+            }
+
+            // metadata
+            writer.write("# Data: " + filepathSource.toString() + "\n");
+            writer.write("# SEED=" + SEED + ", dimensions=" + d + ", dataset size=" + n + "\n");
+            writer.write("# Average taken over: " + reps + " repetions\n");
+            writer.write("# Nashed value: Median\n");
+
         } catch (Exception e) {
             e.printStackTrace();
         }

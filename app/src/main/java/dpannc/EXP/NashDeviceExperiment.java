@@ -695,4 +695,83 @@ public class NashDeviceExperiment {
             System.err.println("Error writing results: " + e.getMessage());
         }
     }
+
+    /*
+     * *********************
+     * 10 * Error bounds
+     * *********************
+     */
+    public static void exp10() throws Exception {
+        String name = "nash10";
+        // DB db = new DB("DB/AIMN_" + name, true);
+
+        // settings
+        int SEED = 10;
+        Random random = new Random(SEED);
+        int n = 10; 
+        int d = 300;
+        int D = d/2;
+        // double gamma = Math.sqrt(Math.log(n)/d);
+        double gamma = 0.1;
+
+        double min = 0;
+        double max = 2 * Math.sqrt(gamma);
+        double inc = (max-min) / 50;
+
+        NashDevice nd = new NashDevice(d, d, random);
+
+        Path filepathTarget = Paths.get("app/results/nash/" + name + ".csv");
+        try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
+            // CSV header
+            writer.write("distance / bounds\n");
+            writer.write("0\n");
+            writer.write("1,2,3,4,5,6\n");
+            writer.write("distance,res1,res2,res3,bound1,bound2,bound3\n");
+
+            for (double dist = min; dist < max; dist += inc) {
+                double result1 = 0;
+                double result2 = 0;
+                double result3 = 0;
+
+                int reps = 1000;
+                for (int i = 0; i < reps; i++) {
+                    Vector q1 = new Vector(d).randomGaussian(random);
+                    Vector v1 = q1.sampleWithDistance(dist, random);
+
+                    Vector q2 = nd.transform(q1);
+                    Vector v2 = nd.transform(v1);
+
+                    double tDist = q2.distance(v2);
+                    
+                    if (!(tDist*tDist <= (1+gamma) * dist*dist))  {
+                        result1 += 1.0;
+                    }
+
+                    if (dist <= Math.sqrt(gamma) && !(tDist*tDist >= (1-gamma) * dist*dist))  {
+                        result2 += 1.0;
+                    }
+
+                    if (dist >= Math.sqrt(gamma) && !(tDist*tDist >= gamma/2))  {
+                        result3 += 1.0;
+                    }
+                }
+
+                // collect stats
+                double res1 = 1.0 / (double) reps * result1;
+                double res2 = 1.0 / (double) reps * result2;
+                double res3 = 1.0 / (double) reps * result3;
+                double bound1 = Math.exp(-(D * gamma * gamma) / 6.0);
+                double bound2 = Math.exp(-( (3 * D * Math.pow(gamma, 2)) / 128.0));
+                double bound3 = Math.exp(- (D * gamma / 128.0));
+                writer.write(String.format(Locale.US, "%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f\n",
+                        dist, res1, res2, res3, bound1, bound2, bound3));
+            }
+
+            writer.write("# SEED=" + SEED + ", d=" + d + ", n=" + n + "\n");
+            writer.write("# gamma = " + gamma + "\n");
+            writer.write("# sqrt(gamma) = " + Math.sqrt(gamma) + "\n");
+        } catch (IOException e) {
+            System.err.println("Error writing results: " + e.getMessage());
+        }
+    }
 }
