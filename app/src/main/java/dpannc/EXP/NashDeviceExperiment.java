@@ -16,7 +16,6 @@ import dpannc.Vector;
 import dpannc.database.DB;
 
 public class NashDeviceExperiment {
-    
 
     public static void main(String[] args) throws Exception {
         // exp1();
@@ -26,7 +25,8 @@ public class NashDeviceExperiment {
         // exp5();
         // exp6();
         // exp7();
-        exp9();
+        // exp12();
+        exp13();
         // distMap();
     }
 
@@ -100,12 +100,13 @@ public class NashDeviceExperiment {
         Random random = new Random(SEED);
         int n = 100; // sample size
         int d = 300; // dimensions
+        int dPrime = 600;
 
         double min = 0.001;
         double max = 5;
         double inc = 0.1;
 
-        NashDevice nd = new NashDevice(d, d, random);
+        NashDevice nd = new NashDevice(d, dPrime, random);
 
         Path filepathTarget = Paths.get("app/results/nash/" + name + ".csv");
         try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
@@ -143,8 +144,7 @@ public class NashDeviceExperiment {
         }
     }
 
-
-        /*
+    /*
      * ***********************
      * 1 * DISTANCE DIFFERENCE
      * ***********************
@@ -259,7 +259,6 @@ public class NashDeviceExperiment {
         }
     }
 
-
     /*
      * *********************
      * 5 - PRECISION DIMENSIONALITY REDUCTION - fasttext/english_2M_300D
@@ -312,7 +311,6 @@ public class NashDeviceExperiment {
 
                 // double rPrime = DistMapper.getP95(r);
                 double rPrime = DistMapper.getMedian(r);
-                
 
                 double brute = 0;
                 double trueFound = 0;
@@ -708,15 +706,15 @@ public class NashDeviceExperiment {
         // settings
         int SEED = 10;
         Random random = new Random(SEED);
-        int n = 10; 
+        int n = 10;
         int d = 300;
-        int D = d/2;
+        int D = d / 2;
         // double gamma = Math.sqrt(Math.log(n)/d);
         double gamma = 0.1;
 
         double min = 0;
         double max = 2 * Math.sqrt(gamma);
-        double inc = (max-min) / 50;
+        double inc = (max - min) / 50;
 
         NashDevice nd = new NashDevice(d, d, random);
 
@@ -742,16 +740,16 @@ public class NashDeviceExperiment {
                     Vector v2 = nd.transform(v1);
 
                     double tDist = q2.distance(v2);
-                    
-                    if (!(tDist*tDist <= (1+gamma) * dist*dist))  {
+
+                    if (!(tDist * tDist <= (1 + gamma) * dist * dist)) {
                         result1 += 1.0;
                     }
 
-                    if (dist <= Math.sqrt(gamma) && !(tDist*tDist >= (1-gamma) * dist*dist))  {
+                    if (dist <= Math.sqrt(gamma) && !(tDist * tDist >= (1 - gamma) * dist * dist)) {
                         result2 += 1.0;
                     }
 
-                    if (dist >= Math.sqrt(gamma) && !(tDist*tDist >= gamma/2))  {
+                    if (dist >= Math.sqrt(gamma) && !(tDist * tDist >= gamma / 2)) {
                         result3 += 1.0;
                     }
                 }
@@ -761,8 +759,8 @@ public class NashDeviceExperiment {
                 double res2 = 1.0 / (double) reps * result2;
                 double res3 = 1.0 / (double) reps * result3;
                 double bound1 = Math.exp(-(D * gamma * gamma) / 6.0);
-                double bound2 = Math.exp(-( (3 * D * Math.pow(gamma, 2)) / 128.0));
-                double bound3 = Math.exp(- (D * gamma / 128.0));
+                double bound2 = Math.exp(-((3 * D * Math.pow(gamma, 2)) / 128.0));
+                double bound3 = Math.exp(-(D * gamma / 128.0));
                 writer.write(String.format(Locale.US, "%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f\n",
                         dist, res1, res2, res3, bound1, bound2, bound3));
             }
@@ -774,4 +772,215 @@ public class NashDeviceExperiment {
             System.err.println("Error writing results: " + e.getMessage());
         }
     }
+
+    /*
+     * *********************
+     * 11 * Error bounds
+     * *********************
+     */
+    public static void exp11() throws Exception {
+        String name = "nash11";
+        // DB db = new DB("DB/AIMN_" + name, true);
+
+        // settings
+        int SEED = 10;
+        Random random = new Random(SEED);
+        int n = 10;
+        int d = 300;
+        int D = d / 2;
+        // double gamma = Math.sqrt(Math.log(n)/d);
+
+        NashDevice nd = new NashDevice(d, d, random);
+
+        Path filepathTarget = Paths.get("app/results/nash/" + name + ".csv");
+        try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
+            // CSV header
+            writer.write("distance / bounds\n");
+            writer.write("0\n");
+            writer.write("1,2\n");
+            writer.write("distance,failNear,failFar\n");
+
+            double gamma = 0.4;
+            double r = 0.4; // pick an r within sqrt(gamma)
+            double c = 1.3; // pick a c > 1
+
+            double min = 0;
+            double max = 2;
+            double inc = (max - min) / 50;
+
+            int reps = 1000;
+            double failNear = 0;
+            double failFar = 0;
+            for (double dist = min; dist < max; dist += inc) {
+                for (int i = 0; i < reps; i++) {
+                    // NEAR test
+                    Vector q1 = new Vector(d).randomGaussian(random);
+                    Vector v1 = q1.sampleWithDistance(dist, random);
+                    double distA = q1.distance(v1);
+
+                    Vector q2 = nd.transform(q1);
+                    Vector v2 = nd.transform(v1);
+                    double tDistA = q2.distance(v2);
+
+                    if (tDistA > (1 + gamma) * distA) {
+                        failNear += 1;
+                    }
+
+                    // FAR test
+                    Vector v3 = q1.sampleWithDistance(c * dist, random);
+                    Vector v3t = nd.transform(v3);
+                    double tDistB = q2.distance(v3t);
+                    if (tDistB < (1 - gamma) * c * distA) {
+                        failFar += 1;
+                    }
+                }
+                writer.write(String.format(Locale.US, "%.3f,%.5f,%.5f\n",
+                        dist, failNear / reps, failFar / reps));
+            }
+            writer.write("# SEED=" + SEED + ", d=" + d + ", n=" + n + "\n");
+            writer.write("# gamma = " + gamma + "\n");
+        } catch (IOException e) {
+            System.err.println("Error writing results: " + e.getMessage());
+        }
+    }
+
+    // HEATMAP
+    // gamma/distance/fails
+    public static void exp12() throws Exception {
+        String name = "nash12";
+        // DB db = new DB("DB/AIMN_" + name, true);
+
+        // settings
+        int SEED = 10;
+        Random random = new Random(SEED);
+        int n = 10;
+        int d = 300;
+        int D = d / 2;
+        // double gamma = Math.sqrt(Math.log(n)/d);
+
+        NashDevice nd = new NashDevice(d, d, random);
+
+        Path filepathTarget = Paths.get("app/results/nash/" + name + ".csv");
+        try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
+            // CSV header
+            // writer.write("distance / bounds\n");
+            // writer.write("0\n");
+            // writer.write("1\n");
+            // writer.write("distance,gamma,fails\n");
+
+            double c = 1.3; // pick a c > 1
+
+            double gmin = 0;
+            double gmax = 0.5;
+            double ginc = (gmax - gmin) / 20;
+
+            int reps = 1000;
+            
+
+            double rmin = 0.0;
+            double rmax = 1.0;
+            double rinc = (rmax - rmin) / 20;
+            writer.write("-----");
+            for (double r = rmin; r <= rmax; r += rinc) {
+                writer.write(String.format(Locale.US, ",%.3f", r));
+            }
+            writer.write("\n");
+            for (double gamma = gmin; gamma <= gmax; gamma += ginc) {
+                writer.write(String.format(Locale.US, "%.3f",
+                        gamma));
+                for (double r = rmin; r <= rmax; r += rinc) {
+                    double fails = 0;
+                    for (int i = 0; i < reps; i++) {
+                        // NEAR test
+                        Vector q1 = new Vector(d).randomGaussian(random);
+                        Vector v1 = q1.sampleWithDistance(r, random);
+                        double dist = q1.distance(v1);
+
+                        Vector q2 = nd.transform(q1);
+                        Vector v2 = nd.transform(v1);
+                        double tDist = q2.distance(v2);
+
+                        if (tDist > (1 + gamma) * dist || tDist < (1 - gamma) * dist) {
+                            fails += 1;
+                        }
+
+                    }
+                    writer.write(String.format(Locale.US, ",%.3f",
+                            1.0/(double) reps*fails));
+                }
+                writer.write("\n");
+            }
+            writer.write("# SEED=" + SEED + ", d=" + d + ", n=" + n + "\n");
+        } catch (IOException e) {
+            System.err.println("Error writing results: " + e.getMessage());
+        }
+    }
+
+    // HEATMAP
+    // gamma/distance/fails
+    public static void exp13() throws Exception {
+        String name = "nash13";
+        // DB db = new DB("DB/AIMN_" + name, true);
+
+        // settings
+        int SEED = 10;
+        Random random = new Random(SEED);
+        int n = 10;
+        // double gamma = Math.sqrt(Math.log(n)/d);
+
+        Path filepathTarget = Paths.get("app/results/nash/" + name + ".csv");
+        try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
+            // CSV header
+            // writer.write("distance / bounds\n");
+            // writer.write("0\n");
+            // writer.write("1\n");
+            // writer.write("distance,gamma,fails\n");
+
+            double c = 1.3; // pick a c > 1
+
+            double gmin = 0;
+            double gmax = 0.5;
+            double ginc = (gmax - gmin) / 20;
+
+            int reps = 1000;
+            
+            int dmin = 0;
+            int dmax = 500;
+            int dinc = (dmax - dmin) / 20;
+            writer.write("-----");
+            for (int d = dmin; d <= dmax; d += dinc) {
+                writer.write(String.format(Locale.US, ",%d", d));
+            }
+            writer.write("\n");
+            for (double gamma = gmin; gamma <= gmax; gamma += ginc) {
+                writer.write(String.format(Locale.US, "%.3f",
+                        gamma));
+                for (int d = dmin; d <= dmax; d += dinc) {
+                    double fails = 0;
+                    for (int i = 0; i < reps; i++) {
+                        // NEAR test
+                        Vector q1 = new Vector(d).randomGaussian(random);
+                        Vector v1 = q1.sampleWithDistance(Math.sqrt(gamma/2.0), random);
+                        double dist = q1.distance(v1);
+
+                        NashDevice nd = new NashDevice(d, d, random);
+                        Vector q2 = nd.transform(q1);
+                        Vector v2 = nd.transform(v1);
+                        double tDist = q2.distance(v2);
+
+                        if (tDist > (1 + gamma) * dist || tDist < (1 - gamma) * dist) {
+                            fails += 1;
+                        }
+                    }
+                    writer.write(String.format(Locale.US, ",%.3f",
+                            1.0/(double) reps*fails));
+                }
+                writer.write("\n");
+            }
+            writer.write("# SEED=" + SEED + "\n");
+        } catch (IOException e) {
+            System.err.println("Error writing results: " + e.getMessage());
+        }
+    }
+
 }
