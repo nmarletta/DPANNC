@@ -7,7 +7,7 @@ class Stats {
     double f1Total = 0, precisionTotal = 0, recallTotal = 0;
     int reps = 0;
 
-    // B = brute force, A = algorithm query set
+    // B = expected (brute force), A = actual (algorithm query set)
     void update(Set<String> B, Set<String> A) {
         Set<String> intersection = new HashSet<>(B);
         intersection.retainAll(A);
@@ -36,6 +36,25 @@ class Stats {
         return String.format(Locale.US, "%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f",
             actual / reps, count / reps, TP / reps, FN / reps, FP / reps,
             f1Total / reps, precisionTotal / reps, recallTotal / reps);
+    }
+
+    String TP() {
+        return String.format(Locale.US, "%.1f", TP / reps);
+    }
+    String FN() {
+        return String.format(Locale.US, "%.1f", FN / reps);
+    }
+    String FP() {
+        return String.format(Locale.US, "%.1f", FP / reps);
+    }
+    String precision() {
+        return String.format(Locale.US, "%.1f", precisionTotal / reps);
+    }
+    String recall() {
+        return String.format(Locale.US, "%.1f", recallTotal / reps);
+    }
+    String f1() {
+        return String.format(Locale.US, "%.1f", f1Total / reps);
     }
 }
 

@@ -26,7 +26,7 @@ public class NashDeviceExperiment {
         // exp6();
         // exp7();
         // exp12();
-        exp13();
+        exp14();
         // distMap();
     }
 
@@ -875,7 +875,6 @@ public class NashDeviceExperiment {
             double ginc = (gmax - gmin) / 20;
 
             int reps = 1000;
-            
 
             double rmin = 0.0;
             double rmax = 1.0;
@@ -906,7 +905,7 @@ public class NashDeviceExperiment {
 
                     }
                     writer.write(String.format(Locale.US, ",%.3f",
-                            1.0/(double) reps*fails));
+                            1.0 / (double) reps * fails));
                 }
                 writer.write("\n");
             }
@@ -943,7 +942,7 @@ public class NashDeviceExperiment {
             double ginc = (gmax - gmin) / 20;
 
             int reps = 1000;
-            
+
             int dmin = 0;
             int dmax = 500;
             int dinc = (dmax - dmin) / 20;
@@ -960,7 +959,7 @@ public class NashDeviceExperiment {
                     for (int i = 0; i < reps; i++) {
                         // NEAR test
                         Vector q1 = new Vector(d).randomGaussian(random);
-                        Vector v1 = q1.sampleWithDistance(Math.sqrt(gamma/2.0), random);
+                        Vector v1 = q1.sampleWithDistance(Math.sqrt(gamma / 2.0), random);
                         double dist = q1.distance(v1);
 
                         NashDevice nd = new NashDevice(d, d, random);
@@ -973,7 +972,7 @@ public class NashDeviceExperiment {
                         }
                     }
                     writer.write(String.format(Locale.US, ",%.3f",
-                            1.0/(double) reps*fails));
+                            1.0 / (double) reps * fails));
                 }
                 writer.write("\n");
             }
@@ -983,4 +982,181 @@ public class NashDeviceExperiment {
         }
     }
 
+    // precision - relation between d and d'
+    public static void exp14() throws Exception {
+        String name = "nash14";
+        // DB db = new DB("DB/AIMN_" + name, true);
+
+        // settings
+        int SEED = 10;
+        Random random = new Random(SEED);
+        int n = 10;
+        // double gamma = Math.sqrt(Math.log(n)/d);
+
+        Path filepathTarget = Paths.get("app/results/nash/" + name + ".csv");
+        try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
+            // CSV header
+            writer.write("d / d'\n");
+            writer.write("0\n");
+            writer.write("1\n");
+            writer.write("distance,gamma,fails\n");
+
+            double r = 0.8;
+
+            int reps = 1000;
+
+            int dmin = 5;
+            int dmax = 500;
+            int dinc = (dmax - dmin) / 20;
+
+            int Dmin = 5;
+            int Dmax = 500;
+            int Dinc = (Dmax - Dmin) / 20;
+
+            double p = 0.99; // success threshold
+            double eps = 1e-3; // search precision
+            double gammaMax = 1.0;
+
+            Progress.newBar("Experiment " + name, ((int) (1 + (dmax - dmin) / dinc) * (int) (1 + (Dmax - Dmin) / Dinc)));
+            int pg = 0;
+
+            writer.write("-----");
+            for (int D = Dmin; D <= Dmax; D += Dinc) {
+                writer.write(String.format(Locale.US, ",%d", D));
+            }
+            writer.write("\n");
+            for (int d = dmin; d <= dmax; d += dinc) {
+                writer.write(String.format(Locale.US, "%d", d));
+                for (int D = Dmin; D <= Dmax; D += Dinc) {
+                    double low = 0.0;
+                    double high = gammaMax;
+                    double bestGamma = -1;
+
+                    while (high - low > eps) {
+                        double mid = (low + high) / 2.0;
+                        int fails = 0;
+
+                        for (int i = 0; i < reps; i++) {
+                            Vector q1 = new Vector(d).randomGaussian(random);
+                            Vector v1 = q1.sampleWithDistance(Math.sqrt(r), random);
+                            double dist = q1.distance(v1);
+
+                            NashDevice nd = new NashDevice(d, D, random);
+                            Vector q2 = nd.transform(q1);
+                            Vector v2 = nd.transform(v1);
+                            double tDist = q2.distance(v2);
+
+                            if (tDist > (1 + mid) * dist || tDist < (1 - mid) * dist) {
+                                fails++;
+                            }
+                        }
+
+                        double failureRate = (double) fails / reps;
+                        if (failureRate <= 1.0 - p) {
+                            // gamma is sufficient — try smaller
+                            bestGamma = mid;
+                            high = mid;
+                        } else {
+                            // too many failures — need more tolerance
+                            low = mid;
+                        }
+                    }
+                    writer.write(String.format(Locale.US, ",%.4f", bestGamma));
+                    Progress.updateBar(++pg);
+                }
+                writer.write("\n");
+            }
+            writer.write("# SEED=" + SEED + "\n");
+        } catch (IOException e) {
+            System.err.println("Error writing results: " + e.getMessage());
+        }
+    }
+
+    // precision - relation between r and d'
+    public static void exp15() throws Exception {
+        String name = "nash15";
+        // DB db = new DB("DB/AIMN_" + name, true);
+
+        // settings
+        int SEED = 10;
+        Random random = new Random(SEED);
+        int n = 10;
+        // double gamma = Math.sqrt(Math.log(n)/d);
+
+        Path filepathTarget = Paths.get("app/results/nash/" + name + ".csv");
+        try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
+            // CSV header
+            writer.write("d / d'\n");
+            writer.write("0\n");
+            writer.write("1\n");
+            writer.write("distance,gamma,fails\n");
+
+            int reps = 1000;
+
+            int dmin = 150;
+            int dmax = 1000;
+            int dinc = (dmax - dmin) / 20;
+
+            double rmin = 0.01; 
+            double rmax = 1.0;
+            double rinc = (rmax - rmin) / 20;
+
+            double p = 0.99; // success threshold
+            double eps = 1e-3; // search precision
+            double gammaMax = 1.0;
+
+            Progress.newBar("Experiment " + name, ((int) (1 + (dmax - dmin) / dinc) * (int) (1 + (rmax - rmin) / rinc)));
+            int pg = 0;
+
+            writer.write("-----");
+            for (double r = rmin; r <= rmax; r += rinc) {
+                writer.write(String.format(Locale.US, ",%.3f", r));
+            }
+            writer.write("\n");
+            for (int d = dmin; d <= dmax; d += dinc) {
+                writer.write(String.format(Locale.US, "%d", d));
+                for (double r = rmin; r <= rmax; r += rinc) {
+                    double low = 0.0;
+                    double high = gammaMax;
+                    double bestGamma = -1;
+
+                    while (high - low > eps) {
+                        double mid = (low + high) / 2.0;
+                        int fails = 0;
+
+                        for (int i = 0; i < reps; i++) {
+                            Vector q1 = new Vector(30).randomGaussian(random);
+                            Vector v1 = q1.sampleWithDistance(Math.sqrt(r), random);
+                            double dist = q1.distance(v1);
+
+                            NashDevice nd = new NashDevice(30, d, random);
+                            Vector q2 = nd.transform(q1);
+                            Vector v2 = nd.transform(v1);
+                            double tDist = q2.distance(v2);
+
+                            if (tDist > (1 + mid) * dist || tDist < (1 - mid) * dist) {
+                                fails++;
+                            }
+                        }
+
+                        double failureRate = (double) fails / reps;
+                        if (failureRate <= 1.0 - p) {
+                            // gamma is sufficient — try smaller
+                            bestGamma = mid;
+                            high = mid;
+                        } else {
+                            // too many failures — need more tolerance
+                            low = mid;
+                        }
+                    }
+                    writer.write(String.format(Locale.US, ",%.4f", bestGamma));
+                    Progress.updateBar(++pg);
+                }
+                writer.write("\n");
+            }
+            writer.write("# SEED=" + SEED + "\n");
+        } catch (IOException e) {
+            System.err.println("Error writing results: " + e.getMessage());
+        }
+    }
 }
