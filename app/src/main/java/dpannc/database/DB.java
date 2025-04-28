@@ -15,14 +15,14 @@ public class DB {
 
     public DB(String dbFilename, boolean deleteOnExit) {
         this.dbUrl = "jdbc:sqlite:" + dbFilename + ".db";
-    
+
         try {
             Class.forName("org.sqlite.JDBC");
             this.conn = DriverManager.getConnection(dbUrl);
         } catch (Exception e) {
             throw new RuntimeException("Failed to connect to SQLite DB at " + dbUrl, e);
         }
-    
+
         if (deleteOnExit) {
             new File(dbFilename + ".db").deleteOnExit();
         }
@@ -48,25 +48,26 @@ public class DB {
             createStmt.execute(createTable);
             Progress.clearStatus();
         }
-    
+
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath.toFile()));
-             PreparedStatement stmt = conn.prepareStatement("INSERT INTO " + table + "(label, data) VALUES (?, ?)")) {
-    
+                PreparedStatement stmt = conn
+                        .prepareStatement("INSERT INTO " + table + "(label, data) VALUES (?, ?)")) {
+
             Progress.newStatusBar("Loading vectors into DB table: " + table, n);
-    
+
             String line;
             int counter = 0;
-            int batchSize = n/100;
-    
+            int batchSize = n / 100;
+
             while ((line = reader.readLine()) != null && counter < n) {
                 String label = line.substring(0, line.indexOf(' '));
                 String data = line.substring(line.indexOf(' ') + 1);
-    
+
                 String[] tokens = data.split(" ");
                 if (tokens.length != d) {
-                    continue;
+                    throw new Exception("dimensions in data file does not match the specified d=" + d);
                 }
-    
+
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < tokens.length; i++) {
                     double value = Double.parseDouble(tokens[i]);
@@ -74,23 +75,22 @@ public class DB {
                     if (i != tokens.length - 1)
                         sb.append(" ");
                 }
-    
+
                 stmt.setString(1, label);
                 stmt.setString(2, sb.toString());
                 stmt.addBatch();
                 counter++;
                 Progress.updateStatusBar(counter);
-    
+
                 if (n > 10 && counter % batchSize == 0) {
                     stmt.executeBatch();
                 }
             }
-    
+
             stmt.executeBatch(); // execute any remaining
             Progress.clearStatus();
         }
     }
-    
 
     public void insertRow(String label, String data, String table) throws SQLException {
         try (PreparedStatement stmt = conn
@@ -148,7 +148,7 @@ public class DB {
             }
         }
         if (rowCount == 0)
-            return null;
+            throw new IllegalStateException("No vectors found in table: " + table);
 
         int offset = random.nextInt(rowCount);
         String query = "SELECT label, data FROM " + table + " LIMIT 1 OFFSET ?";
@@ -234,7 +234,7 @@ public class DB {
     public int tableSize(String table) throws SQLException {
         String countQuery = "SELECT COUNT(*) FROM " + table;
         try (PreparedStatement stmt = conn.prepareStatement(countQuery);
-             ResultSet rs = stmt.executeQuery()) {
+                ResultSet rs = stmt.executeQuery()) {
             if (rs.next()) {
                 return rs.getInt(1);
             } else {
@@ -261,7 +261,7 @@ public class DB {
             e.printStackTrace();
         }
     }
-    
+
     public DBiterator iterator(String table) throws SQLException {
         return new DBiterator(conn, table);
     }

@@ -1,6 +1,7 @@
 package dpannc;
 
 public class Progress {
+    private static boolean active = true;
     private static String barName;
     private static int barTotal;
     private static int currentBarProgress = 0;
@@ -18,6 +19,10 @@ public class Progress {
 
     // Create new main progress bar
     public static void newBar(String name, int total) {
+        if (!active) {
+            System.out.println("progressbar is deactivated");
+            return;
+        }
         barName = name;
         barTotal = total;
         currentBarProgress = 0;
@@ -33,6 +38,7 @@ public class Progress {
 
     // Update main progress bar
     public static void updateBar(int progress) {
+        if (!hasBar) return;
         currentBarProgress = progress;
         moveCursorUp(2);
         clearLine();
@@ -45,6 +51,7 @@ public class Progress {
 
     // Create new status bar (with progress)
     public static void newStatusBar(String name, int total) throws Exception {
+        if (!hasBar) return;
         if (statusType != StatusType.NONE)
             throw new Exception("Already has status: " + statusName + ", cannot create: " + name);
 
@@ -60,6 +67,7 @@ public class Progress {
 
     // Update status bar
     public static void updateStatusBar(int progress) throws Exception {
+        if (!hasBar) return;
         if (statusType != StatusType.BAR)
             throw new Exception("StatusBar is not active.");
         currentStatusProgress = progress;
@@ -70,6 +78,7 @@ public class Progress {
 
     // Create new status line (message only)
     public static void newStatus(String message) throws Exception {
+        if (!hasBar) return;
         if (statusType != StatusType.NONE)
             throw new Exception("Already has status, cannot create: " + message);
 

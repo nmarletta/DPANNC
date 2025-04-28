@@ -1017,7 +1017,8 @@ public class NashDeviceExperiment {
             double eps = 1e-3; // search precision
             double gammaMax = 1.0;
 
-            Progress.newBar("Experiment " + name, ((int) (1 + (dmax - dmin) / dinc) * (int) (1 + (Dmax - Dmin) / Dinc)));
+            Progress.newBar("Experiment " + name,
+                    ((int) (1 + (dmax - dmin) / dinc) * (int) (1 + (Dmax - Dmin) / Dinc)));
             int pg = 0;
 
             writer.write("-----");
@@ -1067,6 +1068,7 @@ public class NashDeviceExperiment {
                 writer.write("\n");
             }
             writer.write("# SEED=" + SEED + "\n");
+            writer.write("# reps=" + reps + "\n");
         } catch (IOException e) {
             System.err.println("Error writing results: " + e.getMessage());
         }
@@ -1089,23 +1091,24 @@ public class NashDeviceExperiment {
             writer.write("d / d'\n");
             writer.write("0\n");
             writer.write("1\n");
-            writer.write("distance,gamma,fails\n");
+            writer.write("d',r, gamma\n");
 
             int reps = 1000;
 
             int dmin = 150;
-            int dmax = 1000;
-            int dinc = (dmax - dmin) / 20;
+            int dmax = 2000;
+            int dinc = (dmax - dmin) / 30;
 
-            double rmin = 0.01; 
+            double rmin = 0.01;
             double rmax = 1.0;
-            double rinc = (rmax - rmin) / 20;
+            double rinc = (rmax - rmin) / 30;
 
             double p = 0.99; // success threshold
             double eps = 1e-3; // search precision
             double gammaMax = 1.0;
 
-            Progress.newBar("Experiment " + name, ((int) (1 + (dmax - dmin) / dinc) * (int) (1 + (rmax - rmin) / rinc)));
+            Progress.newBar("Experiment " + name,
+                    ((int) (1 + (dmax - dmin) / dinc) * (int) (1 + (rmax - rmin) / rinc)));
             int pg = 0;
 
             writer.write("-----");
@@ -1155,8 +1158,283 @@ public class NashDeviceExperiment {
                 writer.write("\n");
             }
             writer.write("# SEED=" + SEED + "\n");
+            writer.write("# reps=" + reps + "\n");
         } catch (IOException e) {
-            System.err.println("Error writing results: " + e.getMessage());
+            e.printStackTrace();
         }
+    }
+
+    // points jumping between regions
+    public static void exp16() throws Exception {
+        String name = "nash16";
+        DB db = new DB("DB/AIMN_" + name, true);
+
+        int SEED = 100;
+        Random random = new Random(SEED);
+        int n = 200_000;
+        int d = 300;
+        int dPrime = 2000;
+        int reps = 10;
+        double c = 1.1;
+
+        double min = 0.4;
+        double max = 1.0;
+        double inc = (max - min) / 10;
+
+        Progress.newBar("Experiment " + name, (3 + reps * (int) (1 + (max - min) / inc)));
+        int pg = 0;
+
+        Path filepathSource = Paths.get("app/resources/fasttext/english_2M_300D.txt").toAbsolutePath();
+        Path filepathTarget = Paths.get("app/results/AIMN/" + name + ".csv");
+        try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
+            // CSV header
+            writer.write("initial distance from q / found vectors\n"); // title
+            writer.write("0\n"); // coulmns on x-axis
+            writer.write("1,2,3,4,5,6,7,8,9\n"); // columns on y-axis
+            writer.write(
+                    "r, i2f, f2i, f2o, o2f, i2o, o2i, inner_count, fuzzy_count, outer_count\n");
+
+            // load vectors to DB
+            String table1 = "vectors1";
+            db.loadVectorsIntoDB(table1, filepathSource, n, d);
+            Progress.updateBar(++pg);
+            String table2 = "vectors2";
+            db.loadVectorsIntoDB(table2, filepathSource, n, d);
+            Progress.updateBar(++pg);
+
+            // transform vectors
+            NashDevice nd = new NashDevice(d, dPrime, random);
+            db.applyTransformation(data -> {
+                Vector v = Vector.fromString(".", data);
+                v = nd.transform(v);
+                return v.dataString();
+            }, table1);
+            Progress.updateBar(++pg);
+
+            // results
+            for (double r = min; r <= max; r += inc) {
+                // Stats inner = new Stats();
+                // Stats fuzzy = new Stats();
+                // Stats outer = new Stats();
+                double total_count = 0;
+                double i2f = 0, f2i = 0, f2o = 0, o2f = 0, i2o = 0, o2i = 0;
+                double A_inner_total = 0, A_fuzzy_total = 0, A_outer_total = 0;
+                double B_inner_total = 0, B_fuzzy_total = 0, B_outer_total = 0;
+                for (int i = 0; i < reps; i++) {
+                    // choose query point
+                    Vector q1 = db.getRandomVector(table1, random);
+                    Vector q2 = db.getVectorByLabel(q1.getLabel(), table2);
+
+                    // calculate all distances
+                    Result Ares = new Result().loadDistancesBetween(q1, table1, db);
+                    Result Bres = new Result().loadDistancesBetween(q2, table2, db);
+
+                    Progress.newStatus("writing results...");
+
+                    // INNER REGION results
+                    Set<String> A_inner = Ares.lessThan(r);
+                    Set<String> B_inner = Bres.lessThan(r);
+                    // inner.update(B_inner, A_inner);
+
+                    // FUZZY REGION results
+                    Set<String> A_fuzzy = Ares.within(r, c * r);
+                    Set<String> B_fuzzy = Bres.within(r, c * r);
+                    // fuzzy.update(B_fuzzy, A_fuzzy);
+
+                    // OUTER REGION results
+                    Set<String> A_outer = Ares.greaterThan(c * r);
+                    Set<String> B_outer = Bres.greaterThan(c * r);
+                    // outer.update(B_outer, A_outer);
+
+                    B_inner_total += B_inner.size() / reps;
+                    B_fuzzy_total += B_fuzzy.size() / reps;
+                    B_outer_total += B_outer.size() / reps;
+                    A_inner_total += A_inner.size() / reps;
+                    A_fuzzy_total += A_fuzzy.size() / reps;
+                    A_outer_total += A_outer.size() / reps;
+
+                    Set<String> i_to_f = new HashSet<>(A_inner);
+                    i_to_f.retainAll(B_fuzzy);
+
+                    Set<String> f_to_i = new HashSet<>(A_fuzzy);
+                    f_to_i.retainAll(B_inner);
+
+                    Set<String> f_to_o = new HashSet<>(A_fuzzy);
+                    f_to_o.retainAll(B_outer);
+
+                    Set<String> o_to_f = new HashSet<>(A_outer);
+                    o_to_f.retainAll(B_fuzzy);
+
+                    Set<String> i_to_o = new HashSet<>(A_inner);
+                    i_to_o.retainAll(B_outer);
+
+                    Set<String> o_to_i = new HashSet<>(A_outer);
+                    o_to_i.retainAll(B_inner);
+
+                    i2f += i_to_f.size() / reps;
+                    f2i += f_to_i.size() / reps;
+                    f2o += f_to_o.size() / reps;
+                    o2f += o_to_f.size() / reps;
+                    i2o += i_to_o.size() / reps;
+                    o2i += o_to_i.size() / reps;
+                    total_count += Ares.size() / reps;
+
+                    Progress.clearStatus();
+                    Progress.updateBar(++pg);
+                }
+
+                i2f = B_inner_total == 0 ? 0 : i2f / B_inner_total;
+                f2i = B_fuzzy_total == 0 ? 0 : f2i / B_fuzzy_total;
+                f2o = B_fuzzy_total == 0 ? 0 : f2o / B_fuzzy_total;
+                o2f = B_outer_total == 0 ? 0 : o2f / B_outer_total;
+                i2o = B_inner_total == 0 ? 0 : i2o / B_inner_total;
+                o2i = B_outer_total == 0 ? 0 : o2i / B_outer_total;
+                writer.write(String.format(Locale.US,
+                        "%.3f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.1f,%.1f,%.1f\n",
+                        r, i2f, i2o, f2i, f2o, o2i, o2f, B_inner_total, B_fuzzy_total, B_outer_total));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Progress.printAbove(e.getMessage());
+        }
+        // Progress.end();
+    }
+
+    // points jumping between regions
+    public static void exp17() throws Exception {
+        String name = "nash17";
+        DB db = new DB("DB/AIMN_" + name, true);
+
+        int SEED = 100;
+        Random random = new Random(SEED);
+        int n = 200_000;
+        int d = 300;
+        int reps = 10;
+        double c = 1.1;
+        double r = 1.0 / Math.pow(Math.log(n) / Math.log(10), 1.0 / 8.0);
+        int min = d;
+        int max = 2000;
+        int inc = (max - min) / 10;
+
+        Progress.newBar("Experiment " + name, 1 + (3 + reps * ((max - min) / inc) + 2 * ((max - min) / inc)));
+        int pg = 0;
+
+        Path filepathSource = Paths.get("app/resources/fasttext/english_2M_300D.txt").toAbsolutePath();
+        Path filepathTarget = Paths.get("app/results/AIMN/" + name + ".csv");
+        try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
+            // CSV header
+            writer.write("d' / region transitions\n"); // title
+            writer.write("0\n"); // coulmns on x-axis
+            writer.write("1,2,3,4,5,6,7,8,9,10,11,12,13,14,15\n"); // columns on y-axis
+            writer.write(
+                    "d', i2f, i2fp, i2o, i2op, f2i, f2ip, f2o, f2op, o2i, o2ip, o2f, o2fp, inner_count, fuzzy_count, outer_count\n");
+
+            // load vectors to DB
+            String table1 = "vectors1";
+            db.loadVectorsIntoDB(table1, filepathSource, n, d);
+            Progress.updateBar(++pg);
+
+            // results
+            for (int dPrime = min; dPrime <= max; dPrime += inc) {
+                String table2 = "vectors2";
+                db.loadVectorsIntoDB(table2, filepathSource, n, d);
+                Progress.updateBar(++pg);
+
+                // transform vectors
+                random = new Random(SEED);
+                NashDevice nd = new NashDevice(d, dPrime, random);
+                db.applyTransformation(data -> {
+                    Vector v = Vector.fromString(".", data);
+                    v = nd.transform(v);
+                    return v.dataString();
+                }, table2);
+                Progress.updateBar(++pg);
+
+                double total_count = 0;
+                double i2f = 0, f2i = 0, f2o = 0, o2f = 0, i2o = 0, o2i = 0;
+                double B_inner_total = 0, B_fuzzy_total = 0, B_outer_total = 0;
+
+                random = new Random(SEED);
+                for (int i = 0; i < reps; i++) {
+                    // choose query point
+                    Vector q1 = db.getRandomVector(table1, random);
+                    Vector q2 = db.getVectorByLabel(q1.getLabel(), table2);
+
+                    // calculate all distances
+                    Result Ares = new Result().loadDistancesBetween(q1, table1, db);
+                    Result Bres = new Result().loadDistancesBetween(q2, table2, db);
+
+                    Progress.newStatus("writing results...");
+
+                    // INNER REGION results
+                    Set<String> A_inner = Ares.lessThan(r);
+                    Set<String> B_inner = Bres.lessThan(r);
+                    // inner.update(B_inner, A_inner);
+
+                    // FUZZY REGION results
+                    Set<String> A_fuzzy = Ares.within(r, c * r);
+                    Set<String> B_fuzzy = Bres.within(r, c * r);
+                    // fuzzy.update(B_fuzzy, A_fuzzy);
+
+                    // OUTER REGION results
+                    Set<String> A_outer = Ares.greaterThan(c * r);
+                    Set<String> B_outer = Bres.greaterThan(c * r);
+                    // outer.update(B_outer, A_outer);
+
+                    B_inner_total += B_inner.size() / reps;
+                    B_fuzzy_total += B_fuzzy.size() / reps;
+                    B_outer_total += B_outer.size() / reps;
+
+                    Set<String> i_to_f = new HashSet<>(A_inner);
+                    i_to_f.retainAll(B_fuzzy);
+
+                    Set<String> f_to_i = new HashSet<>(A_fuzzy);
+                    f_to_i.retainAll(B_inner);
+
+                    Set<String> f_to_o = new HashSet<>(A_fuzzy);
+                    f_to_o.retainAll(B_outer);
+
+                    Set<String> o_to_f = new HashSet<>(A_outer);
+                    o_to_f.retainAll(B_fuzzy);
+
+                    Set<String> i_to_o = new HashSet<>(A_inner);
+                    i_to_o.retainAll(B_outer);
+
+                    Set<String> o_to_i = new HashSet<>(A_outer);
+                    o_to_i.retainAll(B_inner);
+
+                    i2f += i_to_f.size() / reps;
+                    f2i += f_to_i.size() / reps;
+                    f2o += f_to_o.size() / reps;
+                    o2f += o_to_f.size() / reps;
+                    i2o += i_to_o.size() / reps;
+                    o2i += o_to_i.size() / reps;
+                    total_count += Ares.size() / reps;
+
+                    Progress.clearStatus();
+                    Progress.updateBar(++pg);
+                }
+                
+                double i2fp = B_inner_total == 0 ? 0 : i2f / B_inner_total;
+                double f2ip = B_fuzzy_total == 0 ? 0 : f2i / B_fuzzy_total;
+                double f2op = B_fuzzy_total == 0 ? 0 : f2o / B_fuzzy_total;
+                double o2fp = B_outer_total == 0 ? 0 : o2f / B_outer_total;
+                double i2op = B_inner_total == 0 ? 0 : i2o / B_inner_total;
+                double o2ip = B_outer_total == 0 ? 0 : o2i / B_outer_total;
+                writer.write(String.format(Locale.US,
+                        "%d,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.1f,%.1f,%.1f\n",
+                        dPrime, i2f, i2fp, i2o, i2op, f2i, f2ip, f2o, f2op, o2i, o2ip, o2f, o2fp, B_inner_total, B_fuzzy_total, B_outer_total));
+            }
+            writer.write("# SEED=" + SEED + "\n");
+            writer.write("# reps=" + reps + "\n");
+            writer.write("# n=" + n + "\n");
+            writer.write("# c=" + c + "\n");
+            writer.write("# r=" + r + "\n");
+            writer.write("# d=" + d + "\n");
+        } catch (Exception e) {
+            e.printStackTrace();
+            Progress.printAbove(e.getMessage());
+        }
+        // Progress.end();
     }
 }
