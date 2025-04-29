@@ -5,7 +5,8 @@ import csv
 from io import StringIO
 
 def plot_from_custom_format(foldername, basename):
-    folder = os.path.join("results", foldername)
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    folder = os.path.join(script_dir, "results", foldername)
     filepath = os.path.join(folder, f"{basename}.csv")
 
     if not os.path.exists(filepath):

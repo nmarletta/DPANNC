@@ -92,6 +92,7 @@ public class Progress {
 
     // Clear status (bar or line)
     public static void clearStatus() throws Exception {
+        if (!hasBar) return;
         if (statusType == StatusType.NONE)
             throw new Exception("No status to clear.");
         moveCursorUp(1);

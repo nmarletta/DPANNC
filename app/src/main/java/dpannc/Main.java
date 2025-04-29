@@ -18,14 +18,7 @@ public class Main {
             switch (experiment) {
                 case "nash1" -> NashDeviceExperiment.exp1();
                 case "nash2" -> NashDeviceExperiment.exp2();
-                case "nash3" -> NashDeviceExperiment.exp3();
-                case "nash4" -> NashDeviceExperiment.exp4();
-                case "nash5" -> NashDeviceExperiment.exp5();
-                case "nash6" -> NashDeviceExperiment.exp6();
-                case "nash8" -> NashDeviceExperiment.exp8();
                 case "nash9" -> NashDeviceExperiment.exp9();
-                case "nash10" -> NashDeviceExperiment.exp10();
-                case "nash12" -> NashDeviceExperiment.exp12();
                 case "nash14" -> NashDeviceExperiment.exp14();
                 case "nash15" -> NashDeviceExperiment.exp15();
                 case "nash16" -> NashDeviceExperiment.exp16();
@@ -35,7 +28,6 @@ public class Main {
                 case "aimn3" -> AIMNexperiments.exp3();
                 case "aimn4" -> AIMNexperiments.exp4();
                 case "aimn5" -> AIMNexperiments.exp5();
-                case "aimn6" -> AIMNexperiments.exp6();
                 // case "aimn7" -> AIMNexperiments.exp7();
                 case "hy1" -> HYexperiments.exp1();
                 default -> {

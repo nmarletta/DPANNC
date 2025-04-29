@@ -47,13 +47,14 @@ public class NashDevice {
         int dPrime = 40;
         NashDevice nd = new NashDevice(d, dPrime, random);
         Vector v1 = new Vector(d).randomGaussian(random);
-        Vector w1 = v1.sampleWithDistance(0.5, random);
+        Vector w1 = v1.sampleWithDistance(10, random);
         double dist1 = v1.distance(w1);
         System.out.println(dist1);
         Vector v2 = nd.transform(v1);
         Vector w2 = nd.transform(w1);
         double dist2 = v2.distance(w2);
         System.out.println(dist2);
+        System.out.println("mag: " + v2.magnitude());
     }
 }
 
