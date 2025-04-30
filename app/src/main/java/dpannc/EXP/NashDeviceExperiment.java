@@ -18,7 +18,7 @@ import dpannc.database.DB;
 public class NashDeviceExperiment {
 
     public static void main(String[] args) throws Exception {
-        exp1();
+        exp16();
         // exp2();
         // exp3();
         // exp4();
@@ -423,7 +423,7 @@ public class NashDeviceExperiment {
         int n = 100_000;
         int d = 300;
         int dPrime = 600;
-        int reps = 10;
+        int reps = 5;
         double c = 1.1;
 
         double[] rValues = new double[] { 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9 };
@@ -493,23 +493,23 @@ public class NashDeviceExperiment {
                     B_fuzzy_total += B_fuzzy.size() / reps;
                     B_outer_total += B_outer.size() / reps;
 
-                    Set<String> i_to_f = new HashSet<>(A_inner);
-                    i_to_f.retainAll(B_fuzzy);
+                    Set<String> i_to_f = new HashSet<>(B_inner);
+                    i_to_f.retainAll(A_fuzzy);
 
-                    Set<String> f_to_i = new HashSet<>(A_fuzzy);
-                    f_to_i.retainAll(B_inner);
+                    Set<String> f_to_i = new HashSet<>(B_fuzzy);
+                    f_to_i.retainAll(A_inner);
 
-                    Set<String> f_to_o = new HashSet<>(A_fuzzy);
-                    f_to_o.retainAll(B_outer);
+                    Set<String> f_to_o = new HashSet<>(B_fuzzy);
+                    f_to_o.retainAll(A_outer);
 
-                    Set<String> o_to_f = new HashSet<>(A_outer);
-                    o_to_f.retainAll(B_fuzzy);
+                    Set<String> o_to_f = new HashSet<>(B_outer);
+                    o_to_f.retainAll(A_fuzzy);
 
-                    Set<String> i_to_o = new HashSet<>(A_inner);
-                    i_to_o.retainAll(B_outer);
+                    Set<String> i_to_o = new HashSet<>(B_inner);
+                    i_to_o.retainAll(A_outer);
 
-                    Set<String> o_to_i = new HashSet<>(A_outer);
-                    o_to_i.retainAll(B_inner);
+                    Set<String> o_to_i = new HashSet<>(B_outer);
+                    o_to_i.retainAll(A_inner);
 
                     i2f += i_to_f.size() / reps;
                     f2i += f_to_i.size() / reps;
@@ -555,7 +555,7 @@ public class NashDeviceExperiment {
 
         int n = 100_000;
         int d = 300;
-        int reps = 10;
+        int reps = 5;
         double r = 1.0 / Math.pow(Math.log(n) / Math.log(10), 1.0 / 8.0);
         double c = 1.1;
 
@@ -575,14 +575,14 @@ public class NashDeviceExperiment {
                     "r, i2f, f2i, f2o, o2f, i2o, o2i, inner_count, fuzzy_count, outer_count\n");
 
             // load vectors to DB
-            String table1 = "vectors1";
-            db.loadVectorsIntoDB(table1, filepathSource, n, d);
+            String table2 = "vectors2";
+            db.loadVectorsIntoDB(table2, filepathSource, n, d);
             Progress.updateBar(++pg);
 
             // results
             for (int dPrime : dPrimeValues) {
-                String table2 = "vectors2";
-                db.loadVectorsIntoDB(table2, filepathSource, n, d);
+                String table1 = "vectors1";
+                db.loadVectorsIntoDB(table1, filepathSource, n, d);
                 Progress.updateBar(++pg);
 
                 // transform vectors
@@ -627,23 +627,23 @@ public class NashDeviceExperiment {
                     B_fuzzy_total += B_fuzzy.size() / reps;
                     B_outer_total += B_outer.size() / reps;
 
-                    Set<String> i_to_f = new HashSet<>(A_inner);
-                    i_to_f.retainAll(B_fuzzy);
+                    Set<String> i_to_f = new HashSet<>(B_inner);
+                    i_to_f.retainAll(A_fuzzy);
 
-                    Set<String> f_to_i = new HashSet<>(A_fuzzy);
-                    f_to_i.retainAll(B_inner);
+                    Set<String> f_to_i = new HashSet<>(B_fuzzy);
+                    f_to_i.retainAll(A_inner);
 
-                    Set<String> f_to_o = new HashSet<>(A_fuzzy);
-                    f_to_o.retainAll(B_outer);
+                    Set<String> f_to_o = new HashSet<>(B_fuzzy);
+                    f_to_o.retainAll(A_outer);
 
-                    Set<String> o_to_f = new HashSet<>(A_outer);
-                    o_to_f.retainAll(B_fuzzy);
+                    Set<String> o_to_f = new HashSet<>(B_outer);
+                    o_to_f.retainAll(A_fuzzy);
 
-                    Set<String> i_to_o = new HashSet<>(A_inner);
-                    i_to_o.retainAll(B_outer);
+                    Set<String> i_to_o = new HashSet<>(B_inner);
+                    i_to_o.retainAll(A_outer);
 
-                    Set<String> o_to_i = new HashSet<>(A_outer);
-                    o_to_i.retainAll(B_inner);
+                    Set<String> o_to_i = new HashSet<>(B_outer);
+                    o_to_i.retainAll(A_inner);
 
                     i2f += i_to_f.size() / reps;
                     f2i += f_to_i.size() / reps;
@@ -657,7 +657,7 @@ public class NashDeviceExperiment {
                 }
                 writer.write(String.format(Locale.US,
                         "%.3f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.1f,%.1f,%.1f\n",
-                        r, i2f, i2o, f2i, f2o, o2i, o2f, B_inner_total, B_fuzzy_total, B_outer_total));
+                        dPrime, i2f, i2o, f2i, f2o, o2i, o2f, B_inner_total, B_fuzzy_total, B_outer_total));
             }
             writer.write("# SEED=" + SEED + "\n");
             writer.write("# n=" + n + "\n");

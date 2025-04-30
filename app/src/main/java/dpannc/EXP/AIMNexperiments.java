@@ -594,4 +594,135 @@ public class AIMNexperiments {
         }
         Progress.end();
     }
+
+    public static void exp6() throws Exception {
+        String name = "aimn6";
+        DB db = new DB("DB/AIMN_" + name, true);
+
+        int SEED = 100;
+        Random random = new Random(SEED);
+        int n = 100_000;
+        int d = 300;
+        int D = 500;
+        int reps = 10;
+
+        double sensitivity = 1.0;
+        double epsilon = 2.0;
+        double delta = 0.0001;
+        double[] cValues = new double[] { 1.0001, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5 };
+
+        Progress.newBar("Experiment " + name, 3 + cValues.length + cValues.length * (2 * reps));
+        int pg = 0;
+
+        Path filepathSource = Paths.get("app/resources/fasttext/english_2M_300D.txt").toAbsolutePath();
+        Path filepathTarget = Paths.get("app/results/AIMN/" + name + ".csv");
+        try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
+            // CSV header
+            writer.write("accuracy\n"); // title
+            writer.write("0\n"); // coulmns on x-axis
+            writer.write("1,2,3,4\n"); // columns on y-axis
+            writer.write("c, missedNearFraction, includedFarFraction, inner_count, fuzzy_count, outer_count\n");
+
+            // load vectors to DB
+            String table1 = "vectors1";
+            db.loadVectorsIntoDB(table1, filepathSource, n, d);
+            Progress.updateBar(++pg);
+            String table2 = "vectors2";
+            db.loadVectorsIntoDB(table2, filepathSource, n, d);
+            Progress.updateBar(++pg);
+
+            NashDevice nd1 = new NashDevice(d, D, new Random(SEED));
+            db.applyTransformation(data -> {
+                Vector v = Vector.fromString(".", data);
+                // v.normalize();
+                v = nd1.transform(v);
+                return v.dataString();
+            }, table1);
+            Progress.updateBar(++pg);
+
+            NashDevice nd2 = new NashDevice(d, D, new Random(SEED));
+            db.applyTransformation(data -> {
+                Vector v = Vector.fromString(".", data);
+                // v.normalize();
+                v = nd2.transform(v);
+                return v.dataString();
+            }, table2);
+            Progress.updateBar(++pg);
+
+            for (double c : cValues) {
+                // initiate AIMN and populate
+                AIMN aimn = new AIMN(n, D, c, sensitivity, epsilon, delta, db);
+                Progress.printAbove(aimn.getSettingsString());
+                aimn.DP(false);
+                aimn.populateFromDB(table2, db);
+                double r = aimn.getR();
+                Progress.updateBar(++pg);
+
+                double missedNearTotal = 0.0;
+                double includedFarTotal = 0.0;
+                double A_inner_total = 0.0;
+                double A_fuzzy_total = 0.0;
+                double A_outer_total = 0.0;
+
+                // results
+                for (int i = 0; i < reps; i++) {
+                    // choose and run query
+                    Progress.newStatus("Querying...");
+                    Vector q1 = db.getRandomVector(table1, random);
+                    Vector q2 = db.getVectorByLabel(q1.getLabel(), table2);
+                    aimn.query(q2);
+                    List<String> queryList = aimn.queryList();
+                    Progress.clearStatus();
+                    Progress.updateBar(++pg);
+
+                    // calculate all distances
+                    Result AIMNres = new Result().loadDistancesBetween(q2, queryList, table2, db);
+                    Result BRUTEres = new Result().loadDistancesBetween(q1, table1, db);
+
+                    Progress.newStatus("writing results...");
+
+                    // INNER REGION results
+                    Set<String> A_inner = AIMNres.lessThan(r);
+                    Set<String> B_inner = BRUTEres.lessThan(r);
+
+                    // FUZZY REGION results
+                    Set<String> A_fuzzy = AIMNres.within(r, c * r);
+                    Set<String> B_fuzzy = BRUTEres.within(r, c * r);
+
+                    // OUTER REGION results
+                    Set<String> A_outer = AIMNres.greaterThan(c * r);
+                    Set<String> B_outer = BRUTEres.greaterThan(c * r);
+
+                    // missed near points = points in B_inner that are no longer in A_inner
+                    Set<String> missedNear = new HashSet<>(B_inner);
+                    missedNear.removeAll(A_inner); // remove those that stayed inner
+                    missedNearTotal += missedNear.size() / reps;
+
+                    // included far points = points in B_outer that moved into A_inner or A_fuzzy
+                    Set<String> unionInnerFuzzy = new HashSet<>(A_inner);
+                    unionInnerFuzzy.addAll(A_fuzzy); // A_inner ∪ A_fuzzy
+                    Set<String> includedFar = new HashSet<>(B_outer);
+                    includedFar.retainAll(unionInnerFuzzy);
+                    includedFarTotal += includedFar.size() / reps;
+
+                    A_inner_total += A_inner.size() / reps;
+                    A_fuzzy_total += A_fuzzy.size() / reps;
+                    A_outer_total += A_outer.size() / reps;
+
+                    Progress.clearStatus();
+                    Progress.updateBar(++pg);
+                }
+
+                // write result to file
+                writer.write(String.format(Locale.US, "%.3f,%.4f,%.4f,%.1f,%.1f,%.1f\n",
+                        c, missedNearTotal, includedFarTotal, A_inner_total, A_fuzzy_total, A_outer_total));
+            }
+            writer.write("# SEED=" + SEED + "\n");
+            writer.write("# reps=" + reps + "\n");
+            writer.write("# both brute force and aimn use nashed data\n");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        Progress.end();
+    }
 }
