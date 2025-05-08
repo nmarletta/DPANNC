@@ -56,31 +56,33 @@ public class Result {
         return this;
     }
 
-    // public Result loadDotProductBetween(Vector q, Collection<String> vectors, String table, DB db) throws Exception {
-    //     list = new ArrayList<Element>();
-    //     for (String label : vectors) {
-    //         Vector v = db.getVectorByLabel(label, table);
-    //         if (q.getLabel().equals(v.getLabel()))
-    //             continue;
-    //         double dist = q.dot(v);
-    //         Element el = new Element(label, dist);
-    //         list.add(el);
-    //     }
-    //     return this;
+    // public Result loadDotProductBetween(Vector q, Collection<String> vectors,
+    // String table, DB db) throws Exception {
+    // list = new ArrayList<Element>();
+    // for (String label : vectors) {
+    // Vector v = db.getVectorByLabel(label, table);
+    // if (q.getLabel().equals(v.getLabel()))
+    // continue;
+    // double dist = q.dot(v);
+    // Element el = new Element(label, dist);
+    // list.add(el);
+    // }
+    // return this;
     // }
 
-    // public Result loadDotProductBetween(Vector q, String table, DB db) throws SQLException {
-    //     list = new ArrayList<Element>();
-    //     DBiterator it = db.iterator(table);
-    //     while (it.hasNext()) {
-    //         Vector v = it.next();
-    //         if (q.getLabel().equals(v.getLabel()))
-    //             continue;
-    //         double dist = q.dot(v);
-    //         Element el = new Element(v.getLabel(), dist);
-    //         list.add(el);
-    //     }
-    //     return this;
+    // public Result loadDotProductBetween(Vector q, String table, DB db) throws
+    // SQLException {
+    // list = new ArrayList<Element>();
+    // DBiterator it = db.iterator(table);
+    // while (it.hasNext()) {
+    // Vector v = it.next();
+    // if (q.getLabel().equals(v.getLabel()))
+    // continue;
+    // double dist = q.dot(v);
+    // Element el = new Element(v.getLabel(), dist);
+    // list.add(el);
+    // }
+    // return this;
     // }
 
     public void add(String label, double val) {
@@ -118,7 +120,6 @@ public class Result {
         if (val <= 0)
             throw new IllegalArgumentException("r cannot be less or equal to 0");
         Set<String> result = new HashSet<String>();
-        int count = 0;
         for (Element e : list) {
             if (e.value < val)
                 result.add(e.label);
@@ -126,25 +127,25 @@ public class Result {
         return result;
     }
 
+    public int amountWithin(double min, double max) {
+        if (min <= 0 || max <= 0)
+            throw new IllegalArgumentException("min and max cannot be less or equal to 0");
+        if (max <= min)
+            throw new IllegalArgumentException("max cannot be less or equal to min");
+        int count = 0;
+        for (Element e : list) {
+            if (e.value >= min && e.value <= max)
+                count++;
+        }
+        return count;
+    }
+
     public Set<String> within(double min, double max) {
         if (min <= 0 || max <= min)
             throw new IllegalArgumentException("min or max not set correctly");
         Set<String> result = new HashSet<String>();
-        int count = 0;
         for (Element e : list) {
             if (e.value >= min && e.value <= max)
-                result.add(e.label);
-        }
-        return result;
-    }
-
-    public Set<String> greaterThan(double val) {
-        if (val <= 0)
-            throw new IllegalArgumentException("r cannot be less or equal to 0");
-        Set<String> result = new HashSet<String>();
-        int count = 0;
-        for (Element e : list) {
-            if (e.value > val)
                 result.add(e.label);
         }
         return result;
@@ -161,17 +162,23 @@ public class Result {
         return count;
     }
 
-    public int amountWithin(double min, double max) {
-        if (min <= 0 || max <= 0)
-            throw new IllegalArgumentException("min and max cannot be less or equal to 0");
-        if (max <= min)
-            throw new IllegalArgumentException("max cannot be less or equal to min");
-        int count = 0;
+    public Set<String> greaterThan(double val) {
+        if (val <= 0)
+            throw new IllegalArgumentException("r cannot be less or equal to 0");
+        Set<String> result = new HashSet<String>();
         for (Element e : list) {
-            if (e.value >= min && e.value <= max)
-                count++;
+            if (e.value > val)
+                result.add(e.label);
         }
-        return count;
+        return result;
+    }
+
+    public Set<String> all() {
+        Set<String> result = new HashSet<String>();
+        for (Element e : list) {
+            result.add(e.label);
+        }
+        return result;
     }
 
     public Result diffBetween(Result b) throws Exception {
@@ -270,24 +277,26 @@ public class Result {
     }
 
     public double percentile(double q) {
-        if (list.isEmpty()) return 0;
+        if (list.isEmpty())
+            return 0;
         if (q < 0 || q > 1) {
             throw new IllegalArgumentException("Percentile must be between 0 and 1");
         }
-    
+
         List<Double> values = list.stream()
                 .map(e -> e.value)
                 .sorted()
                 .toList();
-    
+
         int n = values.size();
-        if (n == 1) return values.get(0);
-    
+        if (n == 1)
+            return values.get(0);
+
         double pos = q * (n - 1); // position in the sorted list
         int lower = (int) Math.floor(pos);
         int upper = (int) Math.ceil(pos);
         double fraction = pos - lower;
-    
+
         // linear interpolation
         if (lower == upper) {
             return values.get(lower);
@@ -300,13 +309,13 @@ public class Result {
         if (k <= 0 || k > list.size()) {
             throw new IllegalArgumentException("k must be between 1 and the number of elements in the result");
         }
-    
+
         return list.stream()
-            .map(e -> e.value)
-            .sorted()
-            .toList()
-            .get(k - 1);
-    }    
+                .map(e -> e.value)
+                .sorted()
+                .toList()
+                .get(k - 1);
+    }
 
     @Override
     public String toString() {

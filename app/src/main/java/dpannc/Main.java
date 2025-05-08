@@ -23,12 +23,11 @@ public class Main {
                 case "nash15" -> NashDeviceExperiment.exp15();
                 case "nash16" -> NashDeviceExperiment.exp16();
                 case "nash17" -> NashDeviceExperiment.exp17();
-                case "aimn1" -> AIMNexperiments.exp1();
-                case "aimn2" -> AIMNexperiments.exp2();
-                case "aimn3" -> AIMNexperiments.exp3();
                 case "aimn4" -> AIMNexperiments.exp4();
                 case "aimn5" -> AIMNexperiments.exp5();
                 case "aimn6" -> AIMNexperiments.exp6();
+                case "aimn7" -> AIMNexperiments.exp7();
+                case "aimn8" -> AIMNexperiments.exp8();
                 // case "aimn7" -> AIMNexperiments.exp7();
                 case "hy1" -> HYexperiments.exp1();
                 default -> {

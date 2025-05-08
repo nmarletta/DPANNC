@@ -572,7 +572,7 @@ public class NashDeviceExperiment {
             writer.write("0\n"); // coulmns on x-axis
             writer.write("1,2,3,4,5,6,7,8,9\n"); // columns on y-axis
             writer.write(
-                    "r, i2f, f2i, f2o, o2f, i2o, o2i, inner_count, fuzzy_count, outer_count\n");
+                    "d', i2f, f2i, f2o, o2f, i2o, o2i, inner_count, fuzzy_count, outer_count\n");
 
             // load vectors to DB
             String table2 = "vectors2";

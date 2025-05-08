@@ -92,6 +92,26 @@ public class DB {
         }
     }
 
+    public void copyTable(String sourceTable, String targetTable) throws Exception {
+        try (Statement stmt = conn.createStatement()) {
+            Progress.newStatusBar("Copying table " + sourceTable + " → " + targetTable, 3);
+    
+            // Drop target table if it already exists
+            stmt.execute("DROP TABLE IF EXISTS " + targetTable);
+            Progress.updateStatusBar(1);
+    
+            // Create the target table with the same schema
+            stmt.execute("CREATE TABLE " + targetTable + " (label TEXT PRIMARY KEY, data TEXT)");
+            Progress.updateStatusBar(2);
+    
+            // Copy all data from source table
+            stmt.execute("INSERT INTO " + targetTable + " (label, data) SELECT label, data FROM " + sourceTable);
+            Progress.updateStatusBar(3);
+    
+            Progress.clearStatus();
+        }
+    }
+
     public void insertRow(String label, String data, String table) throws SQLException {
         try (PreparedStatement stmt = conn
                 .prepareStatement("INSERT OR IGNORE INTO " + table + " (label, data) VALUES (?, ?)")) {

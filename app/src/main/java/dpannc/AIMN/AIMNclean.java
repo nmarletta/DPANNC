@@ -12,7 +12,7 @@ import dpannc.database.DBiterator;
 import dpannc.Noise;
 import dpannc.Progress;
 
-public class AIMN {
+public class AIMNclean {
     private DB db;
     private int n;
     private int d;
@@ -28,10 +28,11 @@ public class AIMN {
 
     private Map<Integer, List<Vector>> gaussiansAtLevel;
     private Map<String, Integer> nodes;
+    private Map<String, Integer> buckets;
     private List<String> remainderBucket; // for vectors that are not assigned a node
     private List<String> query; // for returning result of a query
 
-    public AIMN(int n, int d, double s, double c, double sensitivity, double epsilon, double delta, DB db)
+    public AIMNclean(int n, int d, double s, double c, double sensitivity, double epsilon, double delta, DB db)
             throws SQLException {
         this.db = db;
         this.n = n;
@@ -54,6 +55,7 @@ public class AIMN {
 
         gaussiansAtLevel = new HashMap<>();
         nodes = new HashMap<>();
+        buckets = new HashMap<>();
         remainderBucket = new ArrayList<>();
         db.initTable(nodesTable);
         generateGaussians();
@@ -135,7 +137,7 @@ public class AIMN {
     }
 
     private int query(Vector q, int level, String path) throws Exception {
-        if (level >= K-1) {
+        if (level >= K) {
             List<String> vectors = db.getColumnWhereEquals("data", path, nodesTable,
                     "label");
             query.addAll(vectors);
