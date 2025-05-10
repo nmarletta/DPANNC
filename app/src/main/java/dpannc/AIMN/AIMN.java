@@ -17,7 +17,7 @@ public class AIMN {
     private int n;
     private int d;
     private double sensitivity, epsilon, delta;
-    private int T;
+    private int T, k;
     private double c, lambda, r, K, alpha, beta, adjSen, threshold, etaU, etaQ;
 
     private Random random = new Random(100);
@@ -40,6 +40,7 @@ public class AIMN {
         this.r = 1.0 / Math.pow(log(n, 10), 1.0 / 8.0);
         lambda = (2.0 * Math.sqrt(2.0 * c)) / (c * c + 1.0);
         K = Math.sqrt(ln(n));
+        k = (int) K;
         alpha = 1.0 - ((r * r) / 2.0); // cosine
         beta = Math.sqrt(1.0 - (alpha * alpha)); // sine
         adjSen = 2.0;
@@ -47,9 +48,9 @@ public class AIMN {
         etaU = Math.sqrt((ln(n) / K)) * (lambda / r);
         etaQ = alpha * etaU - 2.0 * beta * Math.sqrt(ln(K));
         // T = (int) (10.0 * ln(K) / (Math.exp(-Math.pow(etaU, 2.0) / 2.0)));
-        // double F_etaU = 0.5 * Erf.erfc(etaU / Math.sqrt(2));
-        NormalDistribution nd = new NormalDistribution(0, 1); // Mean 0, SD 1
-        double F_etaU = 1 - nd.cumulativeProbability(etaU);
+        double F_etaU = 0.5 * Erf.erfc(etaU / Math.sqrt(2));
+        // NormalDistribution nd = new NormalDistribution(0, 1); // Mean 0, SD 1
+        // double F_etaU = 1 - nd.cumulativeProbability(etaU);
         T = (int) (10.0 * ln(K) / F_etaU);
 
         gaussiansAtLevel = new HashMap<>();
@@ -59,7 +60,7 @@ public class AIMN {
         generateGaussians();
     }
 
-    public void populateFromDB(String table, DB db) throws Exception {
+    public void populateFromDB(String table) throws Exception {
         Progress.newStatusBar("Loading vectors into AIMN", n);
         try (DBiterator it = db.iterator(table)) {
             int counter = 0;
@@ -82,17 +83,14 @@ public class AIMN {
         int level = 0;
         String path = "R"; // starting point, not stored in DB
 
-        while (level <= K-1) {
+        while (level < k) {
             boolean accepted = false;
             List<Vector> gaussians = gaussiansAtLevel.get(level);
             for (int i = 0; i < T; i++) {
                 Vector g = gaussians.get(i);
                 if (v.dot(g) >= etaU) {
                     path += ":" + i;
-                    if (level == K-1) {
-                        // only add nodes and counts if its a leaf
-                        nodes.put(path, nodes.getOrDefault(path, 0) + 1);
-                    }
+                    nodes.put(path, nodes.getOrDefault(path, 0) + 1);
                     level++;
                     accepted = true;
                     break;
@@ -135,7 +133,7 @@ public class AIMN {
     }
 
     private int query(Vector q, int level, String path) throws Exception {
-        if (level >= K-1) {
+        if (level == k) {
             List<String> vectors = db.getColumnWhereEquals("data", path, nodesTable,
                     "label");
             query.addAll(vectors);
@@ -148,16 +146,60 @@ public class AIMN {
         for (int i = 0; i < gaussians.size(); i++) {
             Vector g = gaussians.get(i);
             String nextPath = path + ":" + i;
+            // if (!nodes.containsKey(nextPath)) break;
             if (q.dot(g) >= etaQ && nodes.containsKey(nextPath)) {
                 count += query(q, level + 1, nextPath);
             }
         }
+        return count;
+    }
 
+    // calculating dot products once and using cartesian product to fetch leaf nodes
+    public int query2(Vector q) throws Exception {
+        if (q == null)
+            throw new IllegalArgumentException("cannot query a null vector");
+        if (q.get().length != d)
+            throw new IllegalArgumentException(
+                    "query dimensionality needs to be the same as data: " + q.get().length + "!= " + d);
+
+        Progress.printAbove("Querying vector: " + q.getLabel());
+        List<Set<Integer>> queryGaussians = new ArrayList<>();
+        for (int i = 0; i < K; i++) {
+            queryGaussians.add(new HashSet<>());
+        }
+
+        // HashMap<Vector, Double> dotProducts = new HashMap<>();
+        Progress.newStatusBar("query: calculating dot products", k * T);
+        int counter = 0;
+        for (int i = 0; i < k; i++) {
+            List<Vector> gaussians = gaussiansAtLevel.get(i);
+            for (int j = 0; j < gaussians.size(); j++) {
+                if (q.dot(gaussians.get(j)) >= etaQ) {
+                    queryGaussians.get(i).add(j);
+                }
+                Progress.updateStatusBar(++counter);
+            }
+        }
+        Progress.clearStatus();
+
+        query = new ArrayList<>();
+        int count = 0;
+        List<String> queryNodes = CartesianProduct.cp(queryGaussians);
+        Progress.newStatusBar("query: getting vectors", queryNodes.size());
+        int pg = 0;
+        for (String path : queryNodes) {
+            List<String> vectors = db.getColumnWhereEquals("data", path, nodesTable,
+                    "label");
+            query.addAll(vectors);
+            count += nodes.getOrDefault(path, 0);
+            Progress.updateStatusBar(++pg);
+        }
+        Progress.clearStatus();
         return count;
     }
 
     private void generateGaussians() {
-        for (int level = 0; level < K; level++) {
+        for (int level = 0; level < k; level++) {
             List<Vector> gaussians = new ArrayList<>();
             for (int i = 0; i < T; i++) {
                 gaussians.add(new Vector(d).randomGaussian(random).setLabel("G:" + level + ":" + i));

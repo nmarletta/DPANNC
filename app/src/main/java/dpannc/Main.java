@@ -23,13 +23,14 @@ public class Main {
                 case "nash15" -> NashDeviceExperiment.exp15();
                 case "nash16" -> NashDeviceExperiment.exp16();
                 case "nash17" -> NashDeviceExperiment.exp17();
-                case "aimn4" -> AIMNexperiments.exp4();
-                case "aimn5" -> AIMNexperiments.exp5();
-                case "aimn6" -> AIMNexperiments.exp6();
-                case "aimn7" -> AIMNexperiments.exp7();
-                case "aimn8" -> AIMNexperiments.exp8();
-                // case "aimn7" -> AIMNexperiments.exp7();
-                case "hy1" -> HYexperiments.exp1();
+                case "accuracy1" -> AccuracyExperiments.exp1();
+                case "accuracy2" -> AccuracyExperiments.exp2();
+                case "accuracy3" -> AccuracyExperiments.exp3();
+                case "accuracy4" -> AccuracyExperiments.exp4();
+                case "accuracy5" -> AccuracyExperiments.exp5();
+                case "accuracy6" -> AccuracyExperiments.exp6();
+                case "accuracy7" -> AccuracyExperiments.exp7();
+                case "time1" -> RunningtimeExperiments.exp1();
                 default -> {
                     System.err.println("Unknown experiment: " + experiment);
                     System.exit(1);
