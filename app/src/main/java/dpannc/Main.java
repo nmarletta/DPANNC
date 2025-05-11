@@ -27,10 +27,12 @@ public class Main {
                 case "accuracy2" -> AccuracyExperiments.exp2();
                 case "accuracy3" -> AccuracyExperiments.exp3();
                 case "accuracy4" -> AccuracyExperiments.exp4();
-                case "accuracy5" -> AccuracyExperiments.exp5();
+                // case "accuracy5" -> AccuracyExperiments.exp5();
                 case "accuracy6" -> AccuracyExperiments.exp6();
                 case "accuracy7" -> AccuracyExperiments.exp7();
                 case "time1" -> RunningtimeExperiments.exp1();
+                case "time2" -> RunningtimeExperiments.exp2();
+                case "time3" -> RunningtimeExperiments.exp3();
                 default -> {
                     System.err.println("Unknown experiment: " + experiment);
                     System.exit(1);

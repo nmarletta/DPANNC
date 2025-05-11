@@ -150,7 +150,7 @@ public class AIMNclean {
 
         Progress.printAbove("Querying vector: " + q.getLabel());
         List<Set<Integer>> queryGaussians = new ArrayList<>();
-        for (int i = 0; i < K; i++) {
+        for (int i = 0; i < k; i++) {
             queryGaussians.add(new HashSet<>());
         }
 
@@ -167,15 +167,39 @@ public class AIMNclean {
         }
         Progress.clearStatus();
 
-        int count = 0;
-        List<String> queryNodes = CartesianProduct.cp(queryGaussians);
-        Progress.newStatusBar("query: getting vectors", queryNodes.size());
-        int pg = 0;
-        for (String path : queryNodes) {
-            count += nodes.getOrDefault(path, 0);
-            Progress.updateStatusBar(++pg);
+        // Convert sets to lists for indexable Cartesian product
+        List<List<Integer>> queryGaussiansList = new ArrayList<>();
+        for (Set<Integer> set : queryGaussians) {
+            if (set.isEmpty())
+                return 0; // early exit — empty Cartesian product
+            queryGaussiansList.add(new ArrayList<>(set));
         }
-        Progress.clearStatus();
+
+        int[] indices = new int[queryGaussians.size()];
+        int count = 0;
+        boolean done = false;
+
+        while (!done) {
+            StringBuilder sb = new StringBuilder("R");
+            for (int i = 0; i < indices.length; i++) {
+                sb.append(":").append(queryGaussiansList.get(i).get(indices[i]));
+            }
+            String path = sb.toString();
+            count += nodes.getOrDefault(path, 0);
+
+            // Move to next combination
+            int pos = indices.length - 1;
+            while (pos >= 0) {
+                indices[pos]++;
+                if (indices[pos] < queryGaussians.get(pos).size()) {
+                    break;
+                }
+                indices[pos] = 0;
+                pos--;
+            }
+            if (pos < 0)
+                done = true;
+        }
         return count;
     }
 
