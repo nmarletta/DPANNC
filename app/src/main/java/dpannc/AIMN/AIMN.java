@@ -37,7 +37,7 @@ public class AIMN {
         this.n = n;
         this.d = d;
         this.c = c;
-        this.r = 1.0 / Math.pow(log(n, 10), 1.0 / 8.0);
+        this.r = s * (1.0 / Math.pow(log(n, 10), 1.0 / 8.0));
         lambda = (2.0 * Math.sqrt(2.0 * c)) / (c * c + 1.0);
         K = Math.sqrt(ln(n));
         k = (int) K;
@@ -47,10 +47,7 @@ public class AIMN {
         threshold = (adjSen / epsilon) * ln(1.0 + (Math.exp(epsilon / 2.0) - 1.0) / delta);
         etaU = Math.sqrt((ln(n) / K)) * (lambda / r);
         etaQ = alpha * etaU - 2.0 * beta * Math.sqrt(ln(K));
-        // T = (int) (10.0 * ln(K) / (Math.exp(-Math.pow(etaU, 2.0) / 2.0)));
         double F_etaU = 0.5 * Erf.erfc(etaU / Math.sqrt(2));
-        // NormalDistribution nd = new NormalDistribution(0, 1); // Mean 0, SD 1
-        // double F_etaU = 1 - nd.cumulativeProbability(etaU);
         T = (int) (10.0 * ln(K) / F_etaU);
 
         gaussiansAtLevel = new HashMap<>();
@@ -195,6 +192,52 @@ public class AIMN {
             Progress.updateStatusBar(++pg);
         }
         Progress.clearStatus();
+        return count;
+    }
+
+    public int query3(Vector q) throws Exception {
+        if (q == null)
+            throw new IllegalArgumentException("cannot query a null vector");
+        if (q.get().length != d)
+            throw new IllegalArgumentException("query dimensionality mismatch");
+    
+        Progress.printAbove("Querying vector: " + q.getLabel());
+    
+        // precompute which gaussians that accepts q at each level
+        List<Set<Integer>> queryGaussians = new ArrayList<>();
+        for (int i = 0; i < k; i++) {
+            Set<Integer> accepted = new HashSet<>();
+            List<Vector> gaussians = gaussiansAtLevel.get(i);
+            for (int j = 0; j < gaussians.size(); j++) {
+                if (q.dot(gaussians.get(j)) >= etaQ) {
+                    accepted.add(j);
+                }
+            }
+            if (accepted.isEmpty()) return 0; // prune everything
+            queryGaussians.add(accepted);
+        }
+
+        query = new ArrayList<>();
+    
+        // recursively explore paths using precomputed accepted indices
+        return query3("R", 0, queryGaussians);
+    }
+    
+    private int query3(String path, int level, List<Set<Integer>> queryGaussians) throws SQLException {
+        if (level == k) {
+            List<String> vectors = db.getColumnWhereEquals("data", path, nodesTable,
+                    "label");
+            query.addAll(vectors);
+            return nodes.getOrDefault(path, 0);
+        }
+    
+        int count = 0;
+        for (int i : queryGaussians.get(level)) {
+            String nextPath = path + ":" + i;
+            if (nodes.containsKey(nextPath)) {
+                count += query3(nextPath, level + 1, queryGaussians);
+            }
+        }
         return count;
     }
 

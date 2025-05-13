@@ -88,7 +88,7 @@ public class RunningtimeExperiments {
                     Progress.newStatus("Querying...");
                     Vector q1 = db.getRandomVector(table1, random);
                     Timer timer = new Timer();
-                    aimn.query(q1);
+                    aimn.query2(q1);
                     time += timer.check() / reps;
                     Progress.clearStatus();
                     Progress.updateBar(++pg);
@@ -225,7 +225,7 @@ public class RunningtimeExperiments {
         double sensitivity = 1.0;
         double epsilon = 2.0;
         double delta = 0.0001;
-        int[] nValues = new int[] { 100_000};//, 200_000, 300_000, 400_000, 500_000, 600_000, 700_000, 800_000, 900_000, 1_000_000 };
+        int[] nValues = new int[] { 50_000};//, 200_000, 300_000, 400_000, 500_000, 600_000, 700_000, 800_000, 900_000, 1_000_000 };
 
         // progress bar
         Progress.newBar("Experiment " + name, 3 + nValues.length + nValues.length * (2 * reps));
@@ -280,7 +280,7 @@ public class RunningtimeExperiments {
                     time += timer.check() / reps;
                     // Progress.clearStatus();
                     Progress.updateBar(++pg);
-                    Progress.printAbove("count: " + count);
+                    Progress.printAbove("count: " + count + ", time: " + time);
                 }
 
                 // write result to file

@@ -175,23 +175,28 @@ public class AIMNclean {
             queryGaussiansList.add(new ArrayList<>(set));
         }
 
-        int[] indices = new int[queryGaussians.size()];
+        int[] indices = new int[queryGaussiansList.size()];
         int count = 0;
-        boolean done = false;
 
+        boolean done = false;
         while (!done) {
+            // Build path like "R:1:2:3"
             StringBuilder sb = new StringBuilder("R");
             for (int i = 0; i < indices.length; i++) {
                 sb.append(":").append(queryGaussiansList.get(i).get(indices[i]));
             }
             String path = sb.toString();
-            count += nodes.getOrDefault(path, 0);
 
-            // Move to next combination
+            Integer nodeCount = nodes.get(path);
+            if (nodeCount != null) {
+                count += nodeCount;
+            }
+
+            // Advance indices
             int pos = indices.length - 1;
             while (pos >= 0) {
                 indices[pos]++;
-                if (indices[pos] < queryGaussians.get(pos).size()) {
+                if (indices[pos] < queryGaussiansList.get(pos).size()) {
                     break;
                 }
                 indices[pos] = 0;
@@ -200,8 +205,51 @@ public class AIMNclean {
             if (pos < 0)
                 done = true;
         }
+
+        return count;
+    } 
+
+    public int query3(Vector q) throws Exception {
+        if (q == null)
+            throw new IllegalArgumentException("cannot query a null vector");
+        if (q.get().length != d)
+            throw new IllegalArgumentException("query dimensionality mismatch");
+    
+        Progress.printAbove("Querying vector: " + q.getLabel());
+    
+        // precompute which gaussians that accepts q at each level
+        List<Set<Integer>> queryGaussians = new ArrayList<>();
+        for (int i = 0; i < k; i++) {
+            Set<Integer> accepted = new HashSet<>();
+            List<Vector> gaussians = gaussiansAtLevel.get(i);
+            for (int j = 0; j < gaussians.size(); j++) {
+                if (q.dot(gaussians.get(j)) >= etaQ) {
+                    accepted.add(j);
+                }
+            }
+            if (accepted.isEmpty()) return 0; // prune everything
+            queryGaussians.add(accepted);
+        }
+    
+        // recursively explore paths using precomputed accepted indices
+        return query3("R", 0, queryGaussians);
+    }
+    
+    private int query3(String path, int level, List<Set<Integer>> queryGaussians) {
+        if (level == k) {
+            return nodes.getOrDefault(path, 0);
+        }
+    
+        int count = 0;
+        for (int i : queryGaussians.get(level)) {
+            String nextPath = path + ":" + i;
+            if (nodes.containsKey(nextPath)) {
+                count += query3(nextPath, level + 1, queryGaussians);
+            }
+        }
         return count;
     }
+    
 
     private void generateGaussians() {
         for (int level = 0; level < k; level++) {
