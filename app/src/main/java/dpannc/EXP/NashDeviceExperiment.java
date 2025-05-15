@@ -106,7 +106,7 @@ public class NashDeviceExperiment {
         Random random = new Random(SEED);
         int n = 1000; // sample size
         int d = 300; // dimensions
-        int D = 600;
+        int D = 300;
 
         double min = 0.1;
         double max = 2;
@@ -119,9 +119,9 @@ public class NashDeviceExperiment {
             // CSV header
             writer.write("initial distance / transformed distance\n"); // title
             writer.write("0\n"); // coulmns on x-axis
-            writer.write("1\n"); // columns on y-axis
+            writer.write("1,2\n"); // columns on y-axis
 
-            writer.write("initial distance, median transformed distance\n"); // coulumns
+            writer.write("initial distance, median transformed distance, 95th percentile\n"); // coulumns
 
             for (double dist = min; dist < max; dist += inc) {
                 Result transformedDists = new Result();
@@ -140,8 +140,68 @@ public class NashDeviceExperiment {
                 }
 
                 // write result to file
-                writer.write(String.format(Locale.US, "%.2f,%.5f\n",
-                        dist, transformedDists.median()));
+                writer.write(String.format(Locale.US, "%.2f,%.5f,%.5f\n",
+                        dist, transformedDists.median(), transformedDists.percentile(0.95)));
+            }
+            // metadata
+            writer.write("# SEED=" + SEED + ", d=" + d + ", d'=" + D + ", repetitions=" + n + "\n");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /*
+     * ***************
+     * *** NASH 02 ***
+     * ***************
+     * 
+     * transformed distance
+     * for increasing r
+     */
+    public static void exp3() throws Exception {
+        String name = "nash3";
+
+        // settings
+        int SEED = 100;
+        Random random = new Random(SEED);
+        int n = 1000; // sample size
+        int d = 784; // dimensions
+        int D = 784;
+
+        double min = 0.1;
+        double max = 2;
+        double inc = 0.05;
+
+        NashDevice nd = new NashDevice(d, D, random);
+
+        Path filepathTarget = Paths.get("app/results/nash/" + name + ".csv");
+        try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
+            // CSV header
+            writer.write("initial distance / transformed distance\n"); // title
+            writer.write("0\n"); // coulmns on x-axis
+            writer.write("1,2\n"); // columns on y-axis
+
+            writer.write("initial distance, median transformed distance, 95th percentile\n"); // coulumns
+
+            for (double dist = min; dist < max; dist += inc) {
+                Result transformedDists = new Result();
+
+                for (int i = 0; i < n; i++) {
+                    // generate vectors
+                    Vector q1 = new Vector(d).randomGaussian(random);
+                    Vector v1 = q1.sampleWithDistance(dist, random);
+
+                    // apply Nash Transform
+                    Vector q2 = nd.transform(q1);
+                    Vector v2 = nd.transform(v1);
+
+                    // save distances after transformation
+                    transformedDists.add("" + i, q2.distance(v2));
+                }
+
+                // write result to file
+                writer.write(String.format(Locale.US, "%.2f,%.5f,%.5f\n",
+                        dist, transformedDists.median(), transformedDists.percentile(0.95)));
             }
             // metadata
             writer.write("# SEED=" + SEED + ", d=" + d + ", d'=" + D + ", repetitions=" + n + "\n");

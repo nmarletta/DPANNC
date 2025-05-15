@@ -18,6 +18,7 @@ public class Main {
             switch (experiment) {
                 case "nash1" -> NashDeviceExperiment.exp1();
                 case "nash2" -> NashDeviceExperiment.exp2();
+                case "nash3" -> NashDeviceExperiment.exp3();
                 case "nash9" -> NashDeviceExperiment.exp9();
                 case "nash14" -> NashDeviceExperiment.exp14();
                 case "nash15" -> NashDeviceExperiment.exp15();

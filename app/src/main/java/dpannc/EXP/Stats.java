@@ -4,10 +4,12 @@ import java.util.*;
 
 class Stats {
 
-    double innerMissed = 0.0;
-    double innerTrue = 0.0;
-    double includedFar = 0.0;
+    double missedInner = 0.0;
+    double includedInner = 0.0;
+    double missedFuzzy = 0.0;
     double includedFuzzy = 0.0;
+    double includedFar = 0.0;
+    
     double total = 0.0;
 
     int queries = 0;
@@ -19,28 +21,27 @@ class Stats {
         Set<String> fuzzy = data.within(r, cr);
         Set<String> outer = data.greaterThan(cr);
 
-        // false negative
-        // missed near points
-        Set<String> innerMissedSet = new HashSet<>(inner);
-        innerMissedSet.removeAll(query);
-        innerMissed += innerMissedSet.size();
+        Set<String> missedInnerSet = new HashSet<>(inner);
+        missedInnerSet.removeAll(query);
+        missedInner += missedInnerSet.size();
 
-        // true positive
-        // found near points
-        Set<String> innerTrueSet = new HashSet<>(inner);
-        innerTrueSet.retainAll(query);
-        innerTrue += innerTrueSet.size();
+        Set<String> includedInnerSet = new HashSet<>(inner);
+        includedInnerSet.retainAll(query);
+        includedInner += includedInnerSet.size();
 
-        // false positive
-        // included far points
+        Set<String> missedFuzzySet = new HashSet<>(fuzzy);
+        missedFuzzySet.removeAll(query);
+        missedFuzzy += missedFuzzySet.size();
+
+        Set<String> includedFuzzySet = new HashSet<>(fuzzy);
+        includedFuzzySet.retainAll(query);
+        includedFuzzy += includedFuzzySet.size();
+
         Set<String> includedFarSet = new HashSet<>(outer);
         includedFarSet.retainAll(query);
         includedFar += includedFarSet.size();
 
-        // fuzzy positive
-        Set<String> includedFuzzySet = new HashSet<>(fuzzy);
-        includedFuzzySet.retainAll(query);
-        includedFuzzy += includedFuzzySet.size();
+        
 
         total += query.size();
 
@@ -48,25 +49,23 @@ class Stats {
     }
 
     String stats() {
-        return String.format(Locale.US, "%.1f,%.1f,%.1f,%.1f,%.1f",
-                innerMissed / queries, innerTrue / queries, includedFuzzy / queries, includedFar / queries, total / queries);
+        return String.format(Locale.US, "%.1f, %.1f, %.1f, %.1f, %.1f, %.1f",
+                missedInner / queries, includedInner / queries, missedFuzzy / queries, includedFuzzy / queries, includedFar / queries, total / queries);
     }
 
     String statsHeader() {
-        return "innerMissed, innerTrue, includedFuzzy, includedFar, total";
+        return "missedInner, includedInner, missedFuzzy, includedFuzzy, includedFar, total";
     }
 
     String pr() {
-        double TP = innerTrue;
-        double FN = innerMissed;
-        double FP = includedFuzzy + includedFar;
-        double precision = (TP + FP) == 0 ? 1.0 : TP / (TP + FP);
-        double recall = (TP + FN) == 0 ? 1.0 : TP / (TP + FN);
-        return String.format(Locale.US, "%.3f, %.3f", 
+        double fuzzyCoverage = (includedFuzzy + includedFar) == 0 ? 1.0 : includedFuzzy / (includedFuzzy + includedFar);
+        double precision = (total + missedInner + missedFuzzy) == 0 ? 1.0 : (includedInner + includedFuzzy) / (total + missedInner + missedFuzzy);
+        double recall = (missedInner + includedInner) == 0 ? 1.0 : includedInner / (missedInner + includedInner);
+        return String.format(Locale.US, "%.3f, %.3f, %.3f", 
         precision, recall);
     }
 
     String prHeader() {
-        return "precision, recall";
+        return "fuzzycoverage, precision, recall";
     }
 }

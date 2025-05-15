@@ -77,7 +77,7 @@ public class DPExperiments {
                 for (int i = 0; i < reps; i++) {
                     // choose and run query
                     Vector q1 = db.getRandomVector(table1, random);
-                    int count = aimn.query3(q1);
+                    int count = aimn.queryFast(q1);
                     Progress.printAbove("count: " + count);
                     Set<String> queryList = new HashSet<>(aimn.queryList());
                     Progress.updateBar(++pg);
@@ -177,7 +177,7 @@ public class DPExperiments {
                     // choose and run query
                     Progress.newStatus("Querying...");
                     Vector q1 = db.getRandomVector(table1, random);
-                    aimn.query3(q1);
+                    aimn.queryFast(q1);
                     Set<String> queryList = new HashSet<>(aimn.queryList());
                     Progress.clearStatus();
                     Progress.updateBar(++pg);
@@ -277,7 +277,7 @@ public class DPExperiments {
                     // choose and run query
                     Progress.newStatus("Querying...");
                     Vector q1 = db.getRandomVector(table1, random);
-                    aimn.query3(q1);
+                    aimn.queryFast(q1);
                     Set<String> queryList = new HashSet<>(aimn.queryList());
                     Progress.clearStatus();
                     Progress.updateBar(++pg);
@@ -377,7 +377,7 @@ public class DPExperiments {
                     // choose and run query
                     Progress.newStatus("Querying...");
                     Vector q1 = db.getRandomVector(table1, random);
-                    aimn.query3(q1);
+                    aimn.queryFast(q1);
                     Set<String> queryList = new HashSet<>(aimn.queryList());
                     Progress.clearStatus();
                     Progress.updateBar(++pg);
@@ -475,7 +475,7 @@ public class DPExperiments {
                     Progress.newStatus("Querying...");
                     Vector q1 = db.getRandomVector(table1, random);
                     Vector q2 = db.getVectorByLabel(q1.getLabel(), table2);
-                    aimn.query3(q2);
+                    aimn.queryFast(q2);
                     Set<String> queryList = new HashSet<>(aimn.queryList());
                     Progress.clearStatus();
                     Progress.updateBar(++pg);

@@ -110,7 +110,7 @@ public class Result {
             throw new IllegalArgumentException("r cannot be less or equal to 0");
         int count = 0;
         for (Element e : list) {
-            if (e.value < val)
+            if (e.value <= val)
                 count++;
         }
         return count;
@@ -121,7 +121,7 @@ public class Result {
             throw new IllegalArgumentException("r cannot be less or equal to 0");
         Set<String> result = new HashSet<String>();
         for (Element e : list) {
-            if (e.value < val)
+            if (e.value <= val)
                 result.add(e.label);
         }
         return result;
@@ -134,7 +134,7 @@ public class Result {
             throw new IllegalArgumentException("max cannot be less or equal to min");
         int count = 0;
         for (Element e : list) {
-            if (e.value >= min && e.value <= max)
+            if (e.value > min && e.value <= max)
                 count++;
         }
         return count;
@@ -145,7 +145,7 @@ public class Result {
             throw new IllegalArgumentException("min or max not set correctly");
         Set<String> result = new HashSet<String>();
         for (Element e : list) {
-            if (e.value >= min && e.value <= max)
+            if (e.value > min && e.value <= max)
                 result.add(e.label);
         }
         return result;

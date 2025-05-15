@@ -6,13 +6,17 @@ import java.io.FileWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 
 public class DataPrepare {
     public static void main(String[] args) {
         // MNISTcsv2txt();
-        truncateVectors();
+        // truncateVectors();
         // nashVectors();
+        shuffleFastText();
     }
 
     public static void MNISTcsv2txt() {
@@ -122,4 +126,40 @@ public class DataPrepare {
             }
         }
     }
+
+    public static void shuffleFastText() {
+    String nameSource = "english_2M_300D";
+    String nameTarget = nameSource + "_shuffled";
+    Path filepathSource = Paths.get("app/resources/fasttext", nameSource + ".txt");
+    Path filepathTarget = Paths.get("app/resources/fasttext", nameTarget + ".txt");
+
+    try {
+        Files.createDirectories(filepathTarget.getParent());
+        BufferedReader reader = new BufferedReader(new FileReader(filepathSource.toFile()));
+        String header = reader.readLine(); // Read header line
+        List<String> vectors = new ArrayList<>();
+
+        String line;
+        while ((line = reader.readLine()) != null) {
+            vectors.add(line);
+        }
+
+        // Shuffle
+        Collections.shuffle(vectors, new Random(42)); // Set seed for reproducibility
+
+        // Write output
+        try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
+            writer.write(header + "\n");
+            for (String vecLine : vectors) {
+                writer.write(vecLine + "\n");
+            }
+        }
+
+        System.out.println("Shuffled file written to: " + filepathTarget);
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
+
 }

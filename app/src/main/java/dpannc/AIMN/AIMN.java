@@ -151,51 +151,7 @@ public class AIMN {
         return count;
     }
 
-    // calculating dot products once and using cartesian product to fetch leaf nodes
-    public int query2(Vector q) throws Exception {
-        if (q == null)
-            throw new IllegalArgumentException("cannot query a null vector");
-        if (q.get().length != d)
-            throw new IllegalArgumentException(
-                    "query dimensionality needs to be the same as data: " + q.get().length + "!= " + d);
-
-        Progress.printAbove("Querying vector: " + q.getLabel());
-        List<Set<Integer>> queryGaussians = new ArrayList<>();
-        for (int i = 0; i < K; i++) {
-            queryGaussians.add(new HashSet<>());
-        }
-
-        // HashMap<Vector, Double> dotProducts = new HashMap<>();
-        Progress.newStatusBar("query: calculating dot products", k * T);
-        int counter = 0;
-        for (int i = 0; i < k; i++) {
-            List<Vector> gaussians = gaussiansAtLevel.get(i);
-            for (int j = 0; j < gaussians.size(); j++) {
-                if (q.dot(gaussians.get(j)) >= etaQ) {
-                    queryGaussians.get(i).add(j);
-                }
-                Progress.updateStatusBar(++counter);
-            }
-        }
-        Progress.clearStatus();
-
-        query = new ArrayList<>();
-        int count = 0;
-        List<String> queryNodes = CartesianProduct.cp(queryGaussians);
-        Progress.newStatusBar("query: getting vectors", queryNodes.size());
-        int pg = 0;
-        for (String path : queryNodes) {
-            List<String> vectors = db.getColumnWhereEquals("data", path, nodesTable,
-                    "label");
-            query.addAll(vectors);
-            count += nodes.getOrDefault(path, 0);
-            Progress.updateStatusBar(++pg);
-        }
-        Progress.clearStatus();
-        return count;
-    }
-
-    public int query3(Vector q) throws Exception {
+    public int queryFast(Vector q) throws Exception {
         if (q == null)
             throw new IllegalArgumentException("cannot query a null vector");
         if (q.get().length != d)
@@ -220,10 +176,10 @@ public class AIMN {
         query = new ArrayList<>();
     
         // recursively explore paths using precomputed accepted indices
-        return query3("R", 0, queryGaussians);
+        return queryFast("R", 0, queryGaussians);
     }
     
-    private int query3(String path, int level, List<Set<Integer>> queryGaussians) throws SQLException {
+    private int queryFast(String path, int level, List<Set<Integer>> queryGaussians) throws SQLException {
         if (level == k) {
             List<String> vectors = db.getColumnWhereEquals("data", path, nodesTable,
                     "label");
@@ -235,7 +191,7 @@ public class AIMN {
         for (int i : queryGaussians.get(level)) {
             String nextPath = path + ":" + i;
             if (nodes.containsKey(nextPath)) {
-                count += query3(nextPath, level + 1, queryGaussians);
+                count += queryFast(nextPath, level + 1, queryGaussians);
             }
         }
         return count;
