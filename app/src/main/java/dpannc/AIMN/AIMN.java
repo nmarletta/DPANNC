@@ -26,10 +26,14 @@ public class AIMN {
 
     private static final String nodesTable = "nodesTable";
 
-    private Map<Integer, List<Vector>> gaussiansAtLevel;
-    private Map<String, Integer> nodes;
+    private Map<Integer, List<Vector>> gaussiansAtLevel; // precomputed Gaussian vectors for each level
+    private Set<String> nodes; // all nodes in tree - enables pruning
+    private Map<String, Integer> counts; // raw counts
+    private Map<String, Integer> noisyCounts; // counts with noise added
     private List<String> remainderBucket; // for vectors that are not assigned a node
     private List<String> query; // for returning result of a query
+    private int queryCount; // for accumulating query counts
+    private int queryNoisyCount; // for accumulating noisy query counts
 
     public AIMN(int n, int d, double s, double c, double sensitivity, double epsilon, double delta, DB db)
             throws SQLException {
@@ -51,7 +55,9 @@ public class AIMN {
         T = (int) (10.0 * ln(K) / F_etaU);
 
         gaussiansAtLevel = new HashMap<>();
-        nodes = new HashMap<>();
+        nodes = new HashSet<>();
+        counts = new HashMap<>();
+        noisyCounts = new HashMap<>();
         remainderBucket = new ArrayList<>();
         db.initTable(nodesTable);
         generateGaussians();
@@ -87,7 +93,9 @@ public class AIMN {
                 Vector g = gaussians.get(i);
                 if (v.dot(g) >= etaU) {
                     path += ":" + i;
-                    nodes.put(path, nodes.getOrDefault(path, 0) + 1);
+                    nodes.add(path);
+                    if (level == k - 1)
+                        counts.put(path, counts.getOrDefault(path, 0) + 1);
                     level++;
                     accepted = true;
                     break;
@@ -103,17 +111,19 @@ public class AIMN {
     }
 
     private void addNoise() throws Exception {
-        Progress.newStatusBar("Adding noise to counts", nodes.values().size());
+        Progress.newStatusBar("Adding noise to counts", counts.values().size());
         int i = 0;
-        for (Integer count : nodes.values()) {
-            count = count + (int) noise.TLap(sensitivity, epsilon / adjSen, delta / adjSen);
-            if (count <= threshold) {
-                count = 0;
+        for (String node : counts.keySet()) {
+            int rawCount = counts.get(node);
+            int noisyCount = rawCount + (int) noise.TLap(sensitivity, epsilon / adjSen, delta / adjSen);
+            if (noisyCount <= threshold) {
+                noisyCount = 0;
             }
+            noisyCounts.put(node, noisyCount);
             i++;
             Progress.updateStatusBar(i);
         }
-        Progress.printAbove("Noise added to " + nodes.values().size() + " counts");
+        Progress.printAbove("Noise added to " + counts.values().size() + " counts");
     }
 
     public int query(Vector q) throws Exception {
@@ -125,6 +135,9 @@ public class AIMN {
 
         Progress.printAbove("Querying vector: " + q.getLabel());
         query = new ArrayList<>();
+        queryCount = 0;
+        queryNoisyCount = 0;
+
         int count = query(q, 0, "R");
         return count;
     }
@@ -134,7 +147,9 @@ public class AIMN {
             List<String> vectors = db.getColumnWhereEquals("data", path, nodesTable,
                     "label");
             query.addAll(vectors);
-            return nodes.getOrDefault(path, 0); // getOrDefault should not be necessary
+            queryCount = counts.getOrDefault(path, 0);
+            queryNoisyCount = noisyCounts.getOrDefault(path, 0);
+            return queryCount; // getOrDefault should not be necessary
         }
 
         int count = 0;
@@ -144,21 +159,23 @@ public class AIMN {
             Vector g = gaussians.get(i);
             String nextPath = path + ":" + i;
             // if (!nodes.containsKey(nextPath)) break;
-            if (q.dot(g) >= etaQ && nodes.containsKey(nextPath)) {
+            if (q.dot(g) >= etaQ && nodes.contains(nextPath)) {
                 count += query(q, level + 1, nextPath);
             }
         }
         return count;
     }
 
+    // precomputes dotproducts and saves all indexes of accepted Gaussians
+    // paths to leaf nodes are then generated recursively
     public int queryFast(Vector q) throws Exception {
         if (q == null)
             throw new IllegalArgumentException("cannot query a null vector");
         if (q.get().length != d)
             throw new IllegalArgumentException("query dimensionality mismatch");
-    
-        Progress.printAbove("Querying vector: " + q.getLabel());
-    
+
+        Progress.printAbove("Query vector: " + q.getLabel());
+
         // precompute which gaussians that accepts q at each level
         List<Set<Integer>> queryGaussians = new ArrayList<>();
         for (int i = 0; i < k; i++) {
@@ -169,28 +186,35 @@ public class AIMN {
                     accepted.add(j);
                 }
             }
-            if (accepted.isEmpty()) return 0; // prune everything
+            if (accepted.isEmpty())
+                return 0; // prune everything
             queryGaussians.add(accepted);
         }
 
+        Progress.newStatus("Running query... ");
         query = new ArrayList<>();
-    
+
         // recursively explore paths using precomputed accepted indices
-        return queryFast("R", 0, queryGaussians);
+        int count = queryFast("R", 0, queryGaussians);
+        Progress.clearStatus();
+        return count;
     }
-    
-    private int queryFast(String path, int level, List<Set<Integer>> queryGaussians) throws SQLException {
+
+    private int queryFast(String path, int level, List<Set<Integer>> queryGaussians) throws Exception {
         if (level == k) {
             List<String> vectors = db.getColumnWhereEquals("data", path, nodesTable,
                     "label");
             query.addAll(vectors);
-            return nodes.getOrDefault(path, 0);
+            int leafCount = counts.getOrDefault(path, 0);
+            queryCount += leafCount;
+            queryNoisyCount += noisyCounts.getOrDefault(path, 0);
+            return leafCount;
         }
-    
+
         int count = 0;
         for (int i : queryGaussians.get(level)) {
             String nextPath = path + ":" + i;
-            if (nodes.containsKey(nextPath)) {
+            if (nodes.contains(nextPath)) {
                 count += queryFast(nextPath, level + 1, queryGaussians);
             }
         }
@@ -233,6 +257,14 @@ public class AIMN {
         DP = b;
     }
 
+    public int getCount() {
+        return queryCount;
+    }
+
+    public int getNoisyCount() {
+        return queryNoisyCount;
+    }
+
     public static double log(double N, int base) {
         return Math.log(N) / Math.log(base);
     }
@@ -271,4 +303,5 @@ public class AIMN {
     private void appendSetting(StringBuilder sb, String name, int value) {
         sb.append(String.format("%-11s %11d%n", name + ":", value));
     }
+
 }

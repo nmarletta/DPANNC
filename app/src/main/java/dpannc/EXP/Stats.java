@@ -8,7 +8,7 @@ class Stats {
     double includedInner = 0.0;
     double missedFuzzy = 0.0;
     double includedFuzzy = 0.0;
-    double includedFar = 0.0;
+    double includedOuter = 0.0;
     
     double total = 0.0;
 
@@ -37,11 +37,9 @@ class Stats {
         includedFuzzySet.retainAll(query);
         includedFuzzy += includedFuzzySet.size();
 
-        Set<String> includedFarSet = new HashSet<>(outer);
-        includedFarSet.retainAll(query);
-        includedFar += includedFarSet.size();
-
-        
+        Set<String> includedOuterSet = new HashSet<>(outer);
+        includedOuterSet.retainAll(query);
+        includedOuter += includedOuterSet.size();
 
         total += query.size();
 
@@ -50,19 +48,19 @@ class Stats {
 
     String stats() {
         return String.format(Locale.US, "%.1f, %.1f, %.1f, %.1f, %.1f, %.1f",
-                missedInner / queries, includedInner / queries, missedFuzzy / queries, includedFuzzy / queries, includedFar / queries, total / queries);
+                missedInner / queries, includedInner / queries, missedFuzzy / queries, includedFuzzy / queries, includedOuter / queries, total / queries);
     }
 
     String statsHeader() {
-        return "missedInner, includedInner, missedFuzzy, includedFuzzy, includedFar, total";
+        return "missedInner, includedInner, missedFuzzy, includedFuzzy, includedOuter, total";
     }
 
     String pr() {
-        double fuzzyCoverage = (includedFuzzy + includedFar) == 0 ? 1.0 : includedFuzzy / (includedFuzzy + includedFar);
+        double fuzzyCoverage = (missedFuzzy + includedFuzzy) == 0 ? 1.0 : includedFuzzy / (missedFuzzy + includedFuzzy);
         double precision = (total + missedInner + missedFuzzy) == 0 ? 1.0 : (includedInner + includedFuzzy) / (total + missedInner + missedFuzzy);
         double recall = (missedInner + includedInner) == 0 ? 1.0 : includedInner / (missedInner + includedInner);
         return String.format(Locale.US, "%.3f, %.3f, %.3f", 
-        precision, recall);
+        fuzzyCoverage, precision, recall);
     }
 
     String prHeader() {
