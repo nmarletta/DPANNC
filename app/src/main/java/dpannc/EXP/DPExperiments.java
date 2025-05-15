@@ -8,10 +8,10 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.Set;
 
-import dpannc.NashDevice;
 import dpannc.Progress;
 import dpannc.Vector;
 import dpannc.AIMN.AIMN;
+import dpannc.AIMN.NashDevice;
 import dpannc.database.DB;
 
 public class DPExperiments {

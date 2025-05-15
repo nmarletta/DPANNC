@@ -9,7 +9,6 @@ import org.apache.commons.math3.special.Erf;
 import dpannc.Vector;
 import dpannc.database.DB;
 import dpannc.database.DBiterator;
-import dpannc.Noise;
 import dpannc.Progress;
 
 public class AIMN {
@@ -142,13 +141,13 @@ public class AIMN {
         return count;
     }
 
-    private int query(Vector q, int level, String path) throws Exception {
+    private int query(Vector q, int level, String node) throws Exception {
         if (level == k) {
-            List<String> vectors = db.getColumnWhereEquals("data", path, nodesTable,
+            List<String> vectors = db.getColumnWhereEquals("data", node, nodesTable,
                     "label");
             query.addAll(vectors);
-            queryCount = counts.getOrDefault(path, 0);
-            queryNoisyCount = noisyCounts.getOrDefault(path, 0);
+            queryCount = counts.getOrDefault(node, 0);
+            queryNoisyCount = noisyCounts.getOrDefault(node, 0);
             return queryCount; // getOrDefault should not be necessary
         }
 
@@ -157,10 +156,10 @@ public class AIMN {
 
         for (int i = 0; i < gaussians.size(); i++) {
             Vector g = gaussians.get(i);
-            String nextPath = path + ":" + i;
-            // if (!nodes.containsKey(nextPath)) break;
-            if (q.dot(g) >= etaQ && nodes.contains(nextPath)) {
-                count += query(q, level + 1, nextPath);
+            String nextNode = node + ":" + i;
+            // if (!nodes.containsKey(nextnode)) break;
+            if (nodes.contains(nextNode) && q.dot(g) >= etaQ) {
+                count += query(q, level + 1, nextNode);
             }
         }
         return count;

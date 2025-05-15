@@ -1,6 +1,8 @@
-package dpannc;
+package dpannc.AIMN;
 
 import java.util.*;
+
+import dpannc.Vector;
 import dpannc.EXP.Result;
 
 public class NashDevice {
@@ -40,22 +42,6 @@ public class NashDevice {
         double scale = 1.0 / Math.sqrt(dPrime / 2);
         Vector v = new Vector(transformedComponents).multiply(scale);
         return v.setLabel(x.getLabel());
-    }
-
-    public static void main(String[] args) {
-        Random random = new Random();
-        int d = 30;
-        int dPrime = 40;
-        NashDevice nd = new NashDevice(d, dPrime, random);
-        Vector v1 = new Vector(d).randomGaussian(random);
-        Vector w1 = v1.sampleWithDistance(10, random);
-        double dist1 = v1.distance(w1);
-        System.out.println(dist1);
-        Vector v2 = nd.transform(v1);
-        Vector w2 = nd.transform(w1);
-        double dist2 = v2.distance(w2);
-        System.out.println(dist2);
-        System.out.println("mag: " + v2.magnitude());
     }
 
     public static double getTransformedDistance(int d, int dPrime, double r, double percentile, Random random) {

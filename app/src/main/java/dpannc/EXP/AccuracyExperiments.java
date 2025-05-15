@@ -10,7 +10,6 @@ import java.util.Set;
 
 import org.apache.commons.math3.special.Erf;
 
-import dpannc.NashDevice;
 import dpannc.Progress;
 import dpannc.Vector;
 import dpannc.AIMN.*;

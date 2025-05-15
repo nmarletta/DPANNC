@@ -1,4 +1,4 @@
-package dpannc;
+package dpannc.AIMN;
 
 import java.util.Random;
 

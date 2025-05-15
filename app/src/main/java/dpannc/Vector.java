@@ -338,17 +338,17 @@ public class Vector {
         Vector q = this.clone();
         double qNormSq = q.dot(q);
 
-        // Base vector in the direction of q that satisfies dot(q, base) = targetDot
+        // base vector in the direction of q that satisfies dot(q, base) = targetDot
         Vector base = q.clone().multiply(targetDot / qNormSq);
 
-        // Generate a random Gaussian vector
+        // generate a random Gaussian vector
         Vector r = new Vector(q.dimensionality()).randomGaussian(random);
 
-        // Project r orthogonally to q
+        // project r orthogonally to q
         double projectionScale = q.dot(r) / qNormSq;
         Vector projection = q.clone().multiply(projectionScale);
-        Vector rPerp = r.subtract(projection); // Now rPerp ⋅ q == 0
-        // Final vector
+        Vector rPerp = r.subtract(projection); //  rPerp ⋅ q == 0
+        // final vector
         return base.add(rPerp);
     }
 

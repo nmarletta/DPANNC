@@ -17,7 +17,7 @@ public class Progress {
 
     private static StatusType statusType = StatusType.NONE;
 
-    // Create new main progress bar
+    // create new main progress bar
     public static void newBar(String name, int total) {
         if (!active) {
             System.out.println("progressbar is deactivated");
@@ -36,7 +36,7 @@ public class Progress {
         System.out.println();
     }
 
-    // Update main progress bar
+    // update main progress bar
     public static void updateBar(int progress) {
         if (!hasBar) return;
         currentBarProgress = progress;
@@ -49,7 +49,7 @@ public class Progress {
             System.out.println(); // maintain fixed number of lines
     }
 
-    // Create new status bar (with progress)
+    // create new status bar (with progress)
     public static void newStatusBar(String name, int total) throws Exception {
         if (!hasBar) return;
         if (statusType != StatusType.NONE)
@@ -65,7 +65,7 @@ public class Progress {
         System.out.println(statusLine(0));
     }
 
-    // Update status bar
+    // update status bar
     public static void updateStatusBar(int progress) throws Exception {
         if (!hasBar) return;
         if (statusType != StatusType.BAR)
@@ -76,7 +76,7 @@ public class Progress {
         System.out.println(statusLine(progress));
     }
 
-    // Create new status line (message only)
+    // create new status line (message only)
     public static void newStatus(String message) throws Exception {
         if (!hasBar) return;
         if (statusType != StatusType.NONE)
@@ -90,7 +90,7 @@ public class Progress {
         System.out.println(message);
     }
 
-    // Clear status (bar or line)
+    // clear status (bar or line)
     public static void clearStatus() throws Exception {
         if (!hasBar) return;
         if (statusType == StatusType.NONE)
@@ -101,25 +101,25 @@ public class Progress {
         statusType = StatusType.NONE;
     }
 
-    // Print string above the progress bar & status
+    // print string above the progress bar & status
     public static void printAbove(String str) {
         if (hasBar) {
             int linesToMove = 4; // bar name, bar, status, empty
 
             moveCursorUp(linesToMove);
 
-            // Clear the block first
+            // clear the block first
             for (int i = 0; i < linesToMove; i++) {
                 clearLine();
                 System.out.println();
             }
             moveCursorUp(linesToMove);
 
-            // Print your content
+            // print your content
             System.out.print(str.endsWith("\n") ? str : str + "\n");
             System.out.println();
 
-            // Reprint bar + status
+            // reprint bar + status
             System.out.println(barName);
             System.out.println(buildBar(currentBarProgress));
             if (statusType == StatusType.BAR) {
@@ -136,7 +136,7 @@ public class Progress {
         }
     }
 
-    // Final cleanup
+    // cleanup
     public static void end() {
         currentBarProgress = 0;
         hasBar = false;
@@ -145,7 +145,7 @@ public class Progress {
         System.out.println();
     }
 
-    // Internal: build progress bar
+    // build progress bar
     private static String buildBar(int progress) {
         int width = 40;
         int filled = (int) ((progress / (double) barTotal) * width);
@@ -157,17 +157,17 @@ public class Progress {
         return sb.toString();
     }
 
-    // Internal: build status bar string
+    // build status bar string
     private static String statusLine(int progress) {
         return statusName + " - " + percent(progress, statusTotal);
     }
 
-    // Internal: convert to percent string
+    // convert to percent string
     private static String percent(int progress, int total) {
         return String.format("%3d%%", (int) ((progress / (double) total) * 100));
     }
 
-    // Internal: move cursor
+    // move cursor
     private static void moveCursorUp(int lines) {
         System.out.print(String.format("\033[%dA", lines));
     }
@@ -176,7 +176,7 @@ public class Progress {
         System.out.print(String.format("\033[%dB", lines));
     }
 
-    // Internal: clear line
+    // clear line
     private static void clearLine() {
         System.out.print("\033[2K");
     }

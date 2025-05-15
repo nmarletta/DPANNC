@@ -3,13 +3,11 @@ package dpannc.AIMN;
 import java.sql.SQLException;
 import java.util.*;
 
-import org.apache.commons.math3.distribution.NormalDistribution;
 import org.apache.commons.math3.special.Erf;
 
 import dpannc.Vector;
 import dpannc.database.DB;
 import dpannc.database.DBiterator;
-import dpannc.Noise;
 import dpannc.Progress;
 
 public class AIMNclean {

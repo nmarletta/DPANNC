@@ -11,8 +11,8 @@ import java.util.Set;
 import dpannc.Progress;
 import dpannc.Vector;
 import dpannc.AIMN.AIMNclean;
+import dpannc.AIMN.NashDevice;
 import dpannc.database.DB;
-import dpannc.NashDevice;
 import dpannc.EXP.Timer;
 
 public class RunningtimeExperiments {
