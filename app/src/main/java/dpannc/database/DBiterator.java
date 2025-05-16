@@ -46,4 +46,3 @@ public class DBiterator implements Iterator<Vector>, AutoCloseable {
         }
     }
 }
-

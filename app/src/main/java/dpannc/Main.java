@@ -28,7 +28,7 @@ public class Main {
                 case "accuracy2" -> AccuracyExperiments.exp2();
                 case "accuracy3" -> AccuracyExperiments.exp3();
                 case "accuracy4" -> AccuracyExperiments.exp4();
-                // case "accuracy5" -> AccuracyExperiments.exp5();
+                case "accuracy5" -> AccuracyExperiments.exp5();
                 case "accuracy6" -> AccuracyExperiments.exp6();
                 case "accuracy7" -> AccuracyExperiments.exp7();
                 case "time1" -> RunningtimeExperiments.exp1();

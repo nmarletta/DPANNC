@@ -62,7 +62,6 @@ public class DB {
             while ((line = reader.readLine()) != null && counter < n) {
                 String label = line.substring(0, line.indexOf(' '));
                 String data = line.substring(line.indexOf(' ') + 1);
-
                 String[] tokens = data.split(" ");
                 if (tokens.length != d) {
                     throw new Exception("dimensions in data file does not match the specified d=" + d);

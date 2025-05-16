@@ -2,11 +2,13 @@ package dpannc.EXP;
 
 import java.io.FileWriter;
 import java.nio.file.*;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.apache.commons.math3.special.Erf;
 
@@ -37,8 +39,10 @@ public class AccuracyExperiments {
         double sensitivity = 1.0;
         double epsilon = 2.0;
         double delta = 0.0001;
-        // double[] cValues = new double[] { 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.4 };
-        double[] cValues = new double[] { 1.001, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4 };
+        double[] cValues = new double[] { 1.01, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8,
+                1.9, 2.0, 2.1, 2.2, 2.3, 2.4 };
+        // double[] cValues = new double[] { 1.001, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3,
+        // 1.35, 1.4 };
 
         // progress bar
         Progress.newBar("Experiment " + name, 2 + cValues.length * (1 + reps * 2));
@@ -130,13 +134,12 @@ public class AccuracyExperiments {
         int n = 100_000;
         int d = 300;
         int dPrime = 300;
-        // double c = 1.5;
+        double c = 1.4;
         int reps = 10;
         double sensitivity = 1.0;
         double epsilon = 2.0;
         double delta = 0.0001;
-        double[] sValues = new double[] { 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15,
-                1.2 };
+        double[] sValues = new double[] { 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3 };
 
         // progress bar
         Progress.newBar("Experiment " + name, 2 + sValues.length * (1 + reps * 2));
@@ -169,7 +172,7 @@ public class AccuracyExperiments {
             Progress.updateBar(++pg);
 
             for (double s : sValues) {
-                double c = 1.227 / (s * 0.818);
+                // double c = 1.227 / (s * 0.818);
                 // initiate AIMN and populate
                 AIMN aimn = new AIMN(n, dPrime, s, c, sensitivity, epsilon, delta, db);
                 Progress.printAbove(aimn.getSettingsString());
@@ -238,7 +241,8 @@ public class AccuracyExperiments {
                 1_000_000 };
 
         // progress bar
-        Progress.newBar("Experiment " + name, nValues.length * (3 + reps * 2));
+        int sum = Arrays.stream(nValues).sum() / 100_000;
+        Progress.newBar("Experiment " + name, nValues.length * (3 * sum + reps * sum * 2));
         int pg = 0;
 
         Path filepathSource = Paths.get("app/resources/fasttext/english_2M_300D_shuffled.txt").toAbsolutePath();
@@ -253,10 +257,13 @@ public class AccuracyExperiments {
             writer.write("c, " + stats.statsHeader() + ", " + stats.prHeader() + "\n");
 
             for (int n : nValues) {
+                int pgStep = n / 100_000;
+
                 // load vectors to DB
                 String table1 = "vectors1";
                 db.loadVectorsIntoDB(table1, filepathSource, n, d);
-                Progress.updateBar(++pg);
+                pg += pgStep;
+                Progress.updateBar(pg);
 
                 // process vectors
                 NashDevice nd1 = new NashDevice(d, dPrime, new Random(SEED));
@@ -266,7 +273,8 @@ public class AccuracyExperiments {
                     v = nd1.transform(v);
                     return v.dataString();
                 }, table1);
-                Progress.updateBar(++pg);
+                pg += pgStep;
+                Progress.updateBar(pg);
 
                 // initiate AIMN and populate
                 AIMN aimn = new AIMN(n, dPrime, s, c, sensitivity, epsilon, delta, db);
@@ -274,7 +282,8 @@ public class AccuracyExperiments {
                 aimn.DP(false);
                 aimn.populateFromDB(table1);
                 double r = aimn.getR();
-                Progress.updateBar(++pg);
+                pg += pgStep;
+                Progress.updateBar(pg);
 
                 // ensure that test for each c is the same
                 Random random = new Random(SEED);
@@ -285,7 +294,8 @@ public class AccuracyExperiments {
                     Vector q1 = db.getRandomVector(table1, random);
                     aimn.queryFast(q1);
                     Set<String> queryList = new HashSet<>(aimn.queryList());
-                    Progress.updateBar(++pg);
+                    pg += pgStep;
+                    Progress.updateBar(pg);
 
                     // calculate distances
                     Result dists = new Result().loadDistancesBetween(q1, table1, db);
@@ -294,7 +304,9 @@ public class AccuracyExperiments {
                     Progress.newStatus("writing results...");
                     stats.update(dists, queryList, r, c * r);
                     Progress.clearStatus();
-                    Progress.updateBar(++pg);
+
+                    pg += pgStep;
+                    Progress.updateBar(pg);
                 }
 
                 // write result to file
@@ -525,17 +537,16 @@ public class AccuracyExperiments {
         int n = 100_000;
         int d = 300;
         int dPrime = 300;
-        double s = 1.0;
         double c = 1.5;
-        int reps = 10;
+        int k = 100;
+        int reps = 1;
         double sensitivity = 1.0;
         double epsilon = 2.0;
         double delta = 0.0001;
-        double[] scalingFactorValues = new double[] { 0.9, 0.92, 0.94, 0.96, 0.98, 1.0, 1.02, 1.04, 1.06, 1.08, 1.1, 1.12, 1.14, 1.16,
-                1.18, 1.2 };
+        double[] thetaValues = new double[] { 0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2 };
 
         // progress bar
-        Progress.newBar("Experiment " + name, 2 + scalingFactorValues.length * (2 + reps * 2));
+        Progress.newBar("Experiment " + name, 2 + reps * (2 + thetaValues.length * 2));
         int pg = 0;
 
         Path filepathSource = Paths.get("app/resources/fasttext/english_2M_300D_shuffled.txt").toAbsolutePath();
@@ -549,74 +560,71 @@ public class AccuracyExperiments {
             writer.write("1,2,3,4,5,6,7\n"); // columns on y-axis
             writer.write("scaling factor, " + stats.statsHeader() + ", " + stats.prHeader() + "\n");
 
-            // load vectors to DB
-            String table1 = "vectors1";
-            db.loadVectorsIntoDB(table1, filepathSource, n, d);
-            Progress.updateBar(++pg);
+            for (int i = 0; i < reps; i++) {
+                // load vectors to DB
+                String table1 = "vectors1";
+                db.loadVectorsIntoDB(table1, filepathSource, n, d);
+                Progress.updateBar(++pg);
 
-            String table2 = "vectors2";
-            db.copyTable(table1, table2);
-            Progress.updateBar(++pg);
+                Random random = new Random(SEED);
 
-            for (double scale : scalingFactorValues) {
-                // find transformed r and scaling factor
-                // double r_aimn = s * (1.0 / Math.pow((Math.log(n) / Math.log(10)), 1.0 /
-                // 8.0));
-                // double r_target = R; // the desired radius for pre nash transformation
-                // double scale = r_target / r_aimn; // scaling factor
+                // find r for k-nearest neighbors and compute scaling factor
+                Vector q1 = db.getRandomVector(table1, random);
+                Result dists = new Result().loadDistancesBetween(q1, table1, db);
+                double initial_r = dists.distanceToKNearest(k);
+                double target_r = 1.0 / Math.pow((Math.log(n) / Math.log(10)), 1.0 / 8.0);
+                double scalingFactor = target_r / initial_r;
+                Progress.updateBar(++pg);
 
                 // process vectors
                 NashDevice nd = new NashDevice(d, dPrime, new Random(SEED));
                 db.applyTransformation(data -> {
                     Vector v = Vector.fromString(".", data);
-                    v.multiply(scale);
+                    v.multiply(scalingFactor);
                     v = nd.transform(v);
                     return v.dataString();
-                }, table2);
+                }, table1);
                 Progress.updateBar(++pg);
 
-                // initiate AIMN and populate
-                AIMN aimn = new AIMN(n, dPrime, s, c, sensitivity, epsilon, delta, db);
-                Progress.printAbove(aimn.getSettingsString());
-                aimn.DP(false);
-                aimn.populateFromDB(table2);
-                double r = aimn.getR() * scale;
-                Progress.updateBar(++pg);
+                for (double theta : thetaValues) {
 
-                // ensure that test for each c is the same
-                Random random = new Random(SEED);
+                    // initiate AIMN and populate
+                    AIMN aimn = new AIMN(n, dPrime, theta, c, sensitivity, epsilon, delta, db);
+                    Progress.printAbove(aimn.getSettingsString());
+                    aimn.DP(false);
+                    aimn.populateFromDB(table1);
+                    double r = aimn.getR() * theta;
+                    Progress.updateBar(++pg);
 
-                // results
-                for (int i = 0; i < reps; i++) {
-                    // choose and run query
-                    Vector q1 = db.getRandomVector(table1, random);
-                    Vector q2 = db.getVectorByLabel(q1.getLabel(), table2);
-                    aimn.queryFast(q2);
+                    // ensure that test for each theta is the same
+                    random = new Random(SEED);
+
+                    // results
+                    aimn.queryFast(q1);
                     Set<String> queryList = new HashSet<>(aimn.queryList());
                     Progress.updateBar(++pg);
 
                     // calculate distances
-                    // Result dists = new Result().loadDistancesBetween(q1, table1, db);
-                    Result dists = new Result().loadDistancesBetween(q1, table1, db);
+                    Result distances = new Result().loadDistancesBetween(q1, table1, db);
 
                     // write results
                     Progress.newStatus("writing results...");
-                    stats.update(dists, queryList, r, c * r);
+                    stats.update(distances, queryList, r, c * r);
                     Progress.clearStatus();
                     Progress.updateBar(++pg);
+
+                    // write result to file
+                    writer.write(String.format(Locale.US, "%.2f,%s,%s\n",
+                            theta, stats.stats(), stats.pr()));
                 }
 
-                // write result to file
-                writer.write(String.format(Locale.US, "%.2f,%s,%s\n",
-                        scale, stats.stats(), stats.pr()));
             }
             writer.write("# SEED=" + SEED + "\n");
             writer.write("# n: " + n + "\n");
             writer.write("# d: " + d + "\n");
             writer.write("# d': " + dPrime + "\n");
             writer.write("# reps=" + reps + "\n");
-            writer.write("# brute force used nashed data\n");
-            writer.write("# aimn used nashed data\n");
+            writer.write("# Initial r for " + k + "-nearest neighbors\n");
             writer.write("# datafile: " + filepathSource + "\n");
 
         } catch (Exception e) {
@@ -670,7 +678,8 @@ public class AccuracyExperiments {
 
                 // find transformed r and scaling factor
                 double r_aimn = 1.0 / Math.pow((Math.log(n) / Math.log(10)), 1.0 / 8.0);
-                double r_target = r_aimn * (r_aimn / NashDevice.getTransformedDistance(d, dPrime, r_aimn, 0.95, new Random(100)));
+                double r_target = r_aimn
+                        * (r_aimn / NashDevice.getTransformedDistance(d, dPrime, r_aimn, 0.95, new Random(100)));
                 Progress.printAbove("target-r: " + r_target);
                 double scale = r_target / R; // scaling factor
                 Progress.printAbove("scaling: " + scale);
