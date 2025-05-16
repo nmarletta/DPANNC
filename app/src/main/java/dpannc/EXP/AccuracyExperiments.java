@@ -543,10 +543,10 @@ public class AccuracyExperiments {
         double sensitivity = 1.0;
         double epsilon = 2.0;
         double delta = 0.0001;
-        double[] thetaValues = new double[] { 0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2 };
+        double[] thetaValues = new double[] { 0.98, 0.99, 1.0, 1.01, 1.02, 1.03, 1.04, };
 
         // progress bar
-        Progress.newBar("Experiment " + name, 2 + reps * (2 + thetaValues.length * 2));
+        Progress.newBar("Experiment " + name, reps * (3 + thetaValues.length * 3));
         int pg = 0;
 
         Path filepathSource = Paths.get("app/resources/fasttext/english_2M_300D_shuffled.txt").toAbsolutePath();
@@ -572,8 +572,11 @@ public class AccuracyExperiments {
                 Vector q1 = db.getRandomVector(table1, random);
                 Result dists = new Result().loadDistancesBetween(q1, table1, db);
                 double initial_r = dists.distanceToKNearest(k);
+                Progress.printAbove("i_r: " + initial_r);
                 double target_r = 1.0 / Math.pow((Math.log(n) / Math.log(10)), 1.0 / 8.0);
+                Progress.printAbove("t_r: " + target_r);
                 double scalingFactor = target_r / initial_r;
+                Progress.printAbove("scale: " + scalingFactor);
                 Progress.updateBar(++pg);
 
                 // process vectors
@@ -585,6 +588,9 @@ public class AccuracyExperiments {
                     return v.dataString();
                 }, table1);
                 Progress.updateBar(++pg);
+
+                // update q to transformed version
+                Vector q2 = db.getVectorByLabel(q1.getLabel(), table1);
 
                 for (double theta : thetaValues) {
 
@@ -600,12 +606,12 @@ public class AccuracyExperiments {
                     random = new Random(SEED);
 
                     // results
-                    aimn.queryFast(q1);
+                    aimn.queryFast(q2);
                     Set<String> queryList = new HashSet<>(aimn.queryList());
                     Progress.updateBar(++pg);
 
                     // calculate distances
-                    Result distances = new Result().loadDistancesBetween(q1, table1, db);
+                    Result distances = new Result().loadDistancesBetween(q2, table1, db);
 
                     // write results
                     Progress.newStatus("writing results...");
