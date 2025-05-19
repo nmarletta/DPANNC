@@ -20,6 +20,7 @@ public class Main {
                 case "nash2" -> NashDeviceExperiment.exp2();
                 case "nash3" -> NashDeviceExperiment.exp3();
                 case "nash9" -> NashDeviceExperiment.exp9();
+                case "nash10" -> NashDeviceExperiment.exp10();
                 case "nash14" -> NashDeviceExperiment.exp14();
                 case "nash15" -> NashDeviceExperiment.exp15();
                 case "nash16" -> NashDeviceExperiment.exp16();
@@ -28,12 +29,20 @@ public class Main {
                 case "accuracy2" -> AccuracyExperiments.exp2();
                 case "accuracy3" -> AccuracyExperiments.exp3();
                 case "accuracy4" -> AccuracyExperiments.exp4();
+                case "accuracy4a" -> AccuracyExperiments.exp4a();
                 case "accuracy5" -> AccuracyExperiments.exp5();
+                case "accuracy5a" -> AccuracyExperiments.exp5a();
                 case "accuracy6" -> AccuracyExperiments.exp6();
+                case "accuracy6p" -> AccuracyExperiments.exp6p();
                 case "accuracy7" -> AccuracyExperiments.exp7();
+                case "accuracy7p" -> AccuracyExperiments.exp7p();
+                case "accuracy10" -> AccuracyExperiments.exp10();
+                case "accuracy11" -> AccuracyExperiments.exp11();
                 case "time1" -> RunningtimeExperiments.exp1();
                 case "time2" -> RunningtimeExperiments.exp2();
                 case "time3" -> RunningtimeExperiments.exp3();
+                case "dp1" -> DPExperiments.exp1();
+                case "dp2" -> DPExperiments.exp2();
                 default -> {
                     System.err.println("Unknown experiment: " + experiment);
                     System.exit(1);

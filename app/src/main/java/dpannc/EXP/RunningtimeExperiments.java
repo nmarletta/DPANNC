@@ -88,7 +88,7 @@ public class RunningtimeExperiments {
                     Progress.newStatus("Querying...");
                     Vector q1 = db.getRandomVector(table1, random);
                     Timer timer = new Timer();
-                    aimn.query2(q1);
+                    aimn.queryFast(q1);
                     time += timer.check() / reps;
                     Progress.clearStatus();
                     Progress.updateBar(++pg);

@@ -211,57 +211,82 @@ public class NashDeviceExperiment {
 
     /*
      * *********************
-     * 9 * DIST-MAP
+     * 9 * 
      * *********************
      */
     public static void exp9() throws Exception {
         String name = "nash9";
-        // DB db = new DB("DB/AIMN_" + name, true);
 
         // settings
         int SEED = 10;
-        Random random = new Random(SEED);
-        int n = 1000; // sample size
-        int d = 784;
+        int d = 300;
+        int dPrime = 300;
 
-        double min = 1.1;
+        double min = 0.1;
         double max = 1.4;
-        double inc = 0.02;
-
-        NashDevice nd = new NashDevice(d, d, random);
+        double inc = 0.05;
 
         Path filepathTarget = Paths.get("app/results/nash/" + name + ".csv");
         try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
             // CSV header
-            writer.write("initial distance / transformed distance distribution\n");
+            writer.write("initial distance / distortion factor\n");
             writer.write("0\n");
-            writer.write("1,2,3,4\n");
-            writer.write("initial,median,mean,p5,p95\n");
+            writer.write("1,2,3,4,5\n");
+            writer.write("dist, p1, p25, median, p75, p99\n");
 
             for (double dist = min; dist < max; dist += inc) {
-                Result transformedDists = new Result();
 
-                for (int i = 0; i < n; i++) {
-                    Vector q1 = new Vector(d).randomGaussian(random);
-                    Vector v1 = q1.sampleWithDistance(dist, random);
+                double p5 = NashDevice.getDistortionFactor(d, dPrime, dist, 0.01, new Random(SEED));
+                double p25 = NashDevice.getDistortionFactor(d, dPrime, dist, 0.25, new Random(SEED));
+                double median = NashDevice.getDistortionFactor(d, dPrime, dist, 0.5, new Random(SEED));
+                double p75 = NashDevice.getDistortionFactor(d, dPrime, dist, 0.75, new Random(SEED));
+                double p95 = NashDevice.getDistortionFactor(d, dPrime, dist, 0.99, new Random(SEED));           
 
-                    Vector q2 = nd.transform(q1);
-                    Vector v2 = nd.transform(v1);
-
-                    transformedDists.add("" + i, q2.distance(v2));
-                }
-
-                // collect stats
-                double median = transformedDists.median();
-                double mean = transformedDists.mean();
-                double p5 = transformedDists.percentile(0.05);
-                double p95 = transformedDists.percentile(0.95);
-
-                writer.write(String.format(Locale.US, "%.5f,%.5f,%.5f,%.5f,%.5f\n",
-                        dist, median, mean, p5, p95));
+                writer.write(String.format(Locale.US, "%.5f, %.5f, %.5f, %.5f, %.5f, %.5f\n",
+                        dist, p5, p25, median, p75, p95));
             }
 
-            writer.write("# SEED=" + SEED + ", d=" + d + ", n=" + n + "\n");
+            writer.write("# SEED=" + SEED + ", d=" + d + ", d'=" + dPrime + "\n");
+        } catch (IOException e) {
+            System.err.println("Error writing results: " + e.getMessage());
+        }
+    }
+    /*
+     * *********************
+     * 9 * 
+     * *********************
+     */
+    public static void exp10() throws Exception {
+        String name = "nash10";
+
+        // settings
+        int SEED = 10;
+        int d = 300;
+        double dist = 0.8;
+
+        int[] dPrimeValues = new int[] { 5, 25, 50, 100, 200, 300, 400, 500, 750, 1000 };
+
+        Path filepathTarget = Paths.get("app/results/nash/" + name + ".csv");
+        try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
+            // CSV header
+            writer.write("initial distance / distortion factor\n");
+            writer.write("0\n");
+            writer.write("1,2,3,4,5\n");
+            writer.write("d', p1, p25, median, p75, p99\n");
+
+            for (int dPrime : dPrimeValues) {
+
+                double p1 = NashDevice.getDistortionFactor(d, dPrime, dist, 0.01, new Random(SEED));
+                double p25 = NashDevice.getDistortionFactor(d, dPrime, dist, 0.25, new Random(SEED));
+                double median = NashDevice.getDistortionFactor(d, dPrime, dist, 0.5, new Random(SEED));
+                double p75 = NashDevice.getDistortionFactor(d, dPrime, dist, 0.75, new Random(SEED));
+                double p99 = NashDevice.getDistortionFactor(d, dPrime, dist, 0.99, new Random(SEED));           
+
+                writer.write(String.format(Locale.US, "%d, %.5f, %.5f, %.5f, %.5f, %.5f\n",
+                        dPrime, p1, p25, median, p75, p99));
+            }
+
+            writer.write("# SEED=" + SEED + ", d=" + d + ", dist=" + dist + "\n");
         } catch (IOException e) {
             System.err.println("Error writing results: " + e.getMessage());
         }
