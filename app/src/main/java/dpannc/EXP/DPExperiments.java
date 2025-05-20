@@ -20,7 +20,7 @@ import dpannc.database.DB;
 
 public class DPExperiments {
 
-    // optimize cr range
+    // delta
     public static void exp1() throws Exception {
         String name = "dp1";
         DB db = new DB("DB/AIMN_" + name, true);
@@ -48,11 +48,12 @@ public class DPExperiments {
         Path filepathTarget = Paths.get("app/results/AIMN/" + name + ".csv");
         try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
             Stats stats = new Stats();
-
             // CSV header
-            writer.write("delta, threshold, rawCount, noisyCount, totalBuckets, emptyBuckets\n");
+            writer.write(
+                    "delta, threshold, " + stats.statsHeader() + " rawCount, noisyCount, totalBuckets, emptyBuckets\n");
 
             for (double delta : deltaValues) {
+                stats.reset();
                 double threshold = 0;
                 double rawCount = 0;
                 double noisyCount = 0;
@@ -89,7 +90,7 @@ public class DPExperiments {
                     Vector q2 = db.getVectorByLabel(q1.getLabel(), table1);
 
                     // initiate AIMN and populate
-                    AIMNclean aimn = new AIMNclean(n, dPrime, s, c, sensitivity, epsilon, delta, db);
+                    AIMN aimn = new AIMN(n, dPrime, s, c, sensitivity, epsilon, delta, db);
                     Progress.printAbove(aimn.getSettingsString());
                     aimn.DP(true);
                     aimn.populateFromDB(table1);
@@ -100,6 +101,17 @@ public class DPExperiments {
 
                     // results
                     aimn.queryFast(q2);
+                    Set<String> queryList = new HashSet<>(aimn.queryList());
+                    Progress.updateBar(++pg);
+
+                    // calculate distances
+                    double r = aimn.getR();
+                    Result distances = new Result().loadDistancesBetween(q2, table1, db);
+
+                    // write results
+                    Progress.newStatus("writing results...");
+                    stats.update(distances, queryList, r, c * r);
+
                     threshold += aimn.noiseThreshold() / reps;
                     rawCount += aimn.getCount() / reps;
                     noisyCount += aimn.getNoisyCount() / reps;
@@ -111,12 +123,12 @@ public class DPExperiments {
                     } else {
                         Progress.printAbove("raw: " + rawCount + ", noisy: " + noisyCount);
                     }
-
+                    Progress.clearStatus();
                     Progress.updateBar(++pg);
                 }
                 // write result to file
-                writer.write(String.format(Locale.US, "%.5f, %.3f %.0f, %.0f, %.0f, %.0f\n",
-                        delta, threshold, rawCount, noisyCount, buckets, emptyBuckets));
+                writer.write(String.format(Locale.US, "%.5f, %.3f, %s, %.0f, %.0f, %.0f\n",
+                        delta, threshold, stats.stats(), noisyCount, buckets, emptyBuckets));
             }
             writer.write("# SEED=" + SEED + "\n");
             writer.write("# n: " + n + "\n");
@@ -132,7 +144,7 @@ public class DPExperiments {
         Progress.end();
     }
 
-
+    // epsilon
     public static void exp2() throws Exception {
         String name = "dp2";
         DB db = new DB("DB/AIMN_" + name, true);
@@ -150,8 +162,9 @@ public class DPExperiments {
 
         double sensitivity = 1.0;
         // double epsilon = 2.0;
-        double delta = 0.001;
-        double[] epsilonValues = new double[] { 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0 };
+        double delta = 1.0/n;
+        // double[] epsilonValues = new double[] { 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0 };
+        double[] epsilonValues = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
         // progress bar
         Progress.newBar("Experiment " + name, epsilonValues.length * (reps * 5));
         int pg = 0;
@@ -162,22 +175,25 @@ public class DPExperiments {
             Stats stats = new Stats();
 
             // CSV header
-            writer.write("epsilon, threshold, rawCount, noisyCount, totalBuckets, emptyBuckets\n");
+            writer.write("epsilon, threshold, " + stats.statsHeader()
+                    + ", rawCount, noisyCount, totalBuckets, emptyBuckets\n");
 
             for (double epsilon : epsilonValues) {
+                stats.reset();
+
                 double threshold = 0;
                 double rawCount = 0;
                 double noisyCount = 0;
                 double buckets = 0;
                 double emptyBuckets = 0;
 
+                Random random = new Random(SEED);
+
                 for (int i = 0; i < reps; i++) {
                     // load vectors to DB
                     String table1 = "vectors1";
                     db.loadVectorsIntoDB(table1, filepathSource, n, d);
                     Progress.updateBar(++pg);
-
-                    Random random = new Random(SEED);
 
                     // find r for k-nearest neighbors and compute scaling factor
                     Vector q1 = db.getRandomVector(table1, random);
@@ -201,17 +217,23 @@ public class DPExperiments {
                     Vector q2 = db.getVectorByLabel(q1.getLabel(), table1);
 
                     // initiate AIMN and populate
-                    AIMNclean aimn = new AIMNclean(n, dPrime, s, c, sensitivity, epsilon, delta, db);
+                    AIMN aimn = new AIMN(n, dPrime, s, c, sensitivity, epsilon, delta, db);
                     Progress.printAbove(aimn.getSettingsString());
                     aimn.DP(true);
                     aimn.populateFromDB(table1);
                     Progress.updateBar(++pg);
 
-                    // ensure that test for each theta is the same
-                    random = new Random(SEED);
-
                     // results
                     aimn.queryFast(q2);
+                    Set<String> queryList = new HashSet<>(aimn.queryList());
+
+                    // calculate distances
+                    double r = aimn.getR();
+                    Result distances = new Result().loadDistancesBetween(q2, table1, db);
+
+                    // write results
+                    Progress.newStatus("writing results...");
+                    stats.update(distances, queryList, r, c * r);
                     threshold += aimn.noiseThreshold() / reps;
                     rawCount += aimn.getCount() / reps;
                     noisyCount += aimn.getNoisyCount() / reps;
@@ -223,17 +245,18 @@ public class DPExperiments {
                     } else {
                         Progress.printAbove("raw: " + rawCount + ", noisy: " + noisyCount);
                     }
-
+                    Progress.clearStatus();
                     Progress.updateBar(++pg);
                 }
                 // write result to file
-                writer.write(String.format(Locale.US, "%.5f, %.3f %.0f, %.0f, %.0f, %.0f\n",
-                        epsilon, threshold, rawCount, noisyCount, buckets, emptyBuckets));
+                writer.write(String.format(Locale.US, "%.5f, %.3f, %s, %.0f, %.0f, %.0f\n",
+                        epsilon, threshold, stats.stats(), noisyCount, buckets, emptyBuckets));
             }
             writer.write("# SEED=" + SEED + "\n");
             writer.write("# n: " + n + "\n");
             writer.write("# d: " + d + "\n");
             writer.write("# d': " + dPrime + "\n");
+            writer.write("# delta: " + delta + "\n");
             writer.write("# reps=" + reps + "\n");
             writer.write("# Initial cr for " + k + "-nearest neighbors\n");
             writer.write("# datafile: " + filepathSource + "\n");

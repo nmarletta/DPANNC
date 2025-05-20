@@ -9,7 +9,7 @@ class Stats {
     double missedFuzzy = 0.0;
     double includedFuzzy = 0.0;
     double includedOuter = 0.0;
-    
+
     double total = 0.0;
 
     int queries = 0;
@@ -46,9 +46,22 @@ class Stats {
         queries++;
     }
 
+    public void reset() {
+        missedInner = 0.0;
+        includedInner = 0.0;
+        missedFuzzy = 0.0;
+        includedFuzzy = 0.0;
+        includedOuter = 0.0;
+
+        total = 0.0;
+
+        queries = 0;
+    }
+
     String stats() {
-        return String.format(Locale.US, "%.1f, %.1f, %.1f, %.1f, %.1f, %.1f",
-                missedInner / queries, includedInner / queries, missedFuzzy / queries, includedFuzzy / queries, includedOuter / queries, total / queries);
+        return String.format(Locale.US, "%.0f, %.0f, %.0f, %.0f, %.0f, %.0f",
+                missedInner / queries, includedInner / queries, missedFuzzy / queries, includedFuzzy / queries,
+                includedOuter / queries, total / queries);
     }
 
     String statsHeader() {
@@ -57,13 +70,15 @@ class Stats {
 
     String pr() {
         double fuzzyCoverage = (missedFuzzy + includedFuzzy) == 0 ? 1.0 : includedFuzzy / (missedFuzzy + includedFuzzy);
-        double precision = (total + missedInner + missedFuzzy) == 0 ? 1.0 : (includedInner + includedFuzzy) / (total + missedInner + missedFuzzy);
+        double precision = (total + missedInner + missedFuzzy) == 0 ? 1.0
+                : (includedInner + includedFuzzy) / (total + missedInner);
         double recall = (missedInner + includedInner) == 0 ? 1.0 : includedInner / (missedInner + includedInner);
-        return String.format(Locale.US, "%.3f, %.3f, %.3f", 
-        fuzzyCoverage, precision, recall);
+        return String.format(Locale.US, "%.3f, %.3f, %.3f",
+                fuzzyCoverage, precision, recall);
     }
 
     String prHeader() {
         return "fuzzycoverage, precision, recall";
     }
+
 }

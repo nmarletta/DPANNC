@@ -211,7 +211,7 @@ public class NashDeviceExperiment {
 
     /*
      * *********************
-     * 9 * 
+     * 9 *
      * *********************
      */
     public static void exp9() throws Exception {
@@ -236,11 +236,12 @@ public class NashDeviceExperiment {
 
             for (double dist = min; dist < max; dist += inc) {
 
+                // each measures percentile based on 1000 vectors
                 double p5 = NashDevice.getDistortionFactor(d, dPrime, dist, 0.01, new Random(SEED));
                 double p25 = NashDevice.getDistortionFactor(d, dPrime, dist, 0.25, new Random(SEED));
                 double median = NashDevice.getDistortionFactor(d, dPrime, dist, 0.5, new Random(SEED));
                 double p75 = NashDevice.getDistortionFactor(d, dPrime, dist, 0.75, new Random(SEED));
-                double p95 = NashDevice.getDistortionFactor(d, dPrime, dist, 0.99, new Random(SEED));           
+                double p95 = NashDevice.getDistortionFactor(d, dPrime, dist, 0.99, new Random(SEED));
 
                 writer.write(String.format(Locale.US, "%.5f, %.5f, %.5f, %.5f, %.5f, %.5f\n",
                         dist, p5, p25, median, p75, p95));
@@ -251,9 +252,10 @@ public class NashDeviceExperiment {
             System.err.println("Error writing results: " + e.getMessage());
         }
     }
+
     /*
      * *********************
-     * 9 * 
+     * 9 *
      * *********************
      */
     public static void exp10() throws Exception {
@@ -264,7 +266,9 @@ public class NashDeviceExperiment {
         int d = 300;
         double dist = 0.8;
 
-        int[] dPrimeValues = new int[] { 5, 25, 50, 100, 200, 300, 400, 500, 750, 1000 };
+        int min = 20;
+        int max = 800;
+        int inc = 40;
 
         Path filepathTarget = Paths.get("app/results/nash/" + name + ".csv");
         try (FileWriter writer = new FileWriter(filepathTarget.toAbsolutePath().toString())) {
@@ -274,13 +278,12 @@ public class NashDeviceExperiment {
             writer.write("1,2,3,4,5\n");
             writer.write("d', p1, p25, median, p75, p99\n");
 
-            for (int dPrime : dPrimeValues) {
-
+            for (int dPrime = min; dPrime < max; dPrime += inc) {
                 double p1 = NashDevice.getDistortionFactor(d, dPrime, dist, 0.01, new Random(SEED));
                 double p25 = NashDevice.getDistortionFactor(d, dPrime, dist, 0.25, new Random(SEED));
                 double median = NashDevice.getDistortionFactor(d, dPrime, dist, 0.5, new Random(SEED));
                 double p75 = NashDevice.getDistortionFactor(d, dPrime, dist, 0.75, new Random(SEED));
-                double p99 = NashDevice.getDistortionFactor(d, dPrime, dist, 0.99, new Random(SEED));           
+                double p99 = NashDevice.getDistortionFactor(d, dPrime, dist, 0.99, new Random(SEED));
 
                 writer.write(String.format(Locale.US, "%d, %.5f, %.5f, %.5f, %.5f, %.5f\n",
                         dPrime, p1, p25, median, p75, p99));

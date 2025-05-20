@@ -80,7 +80,7 @@ public class Progress {
     public static void newStatus(String message) throws Exception {
         if (!hasBar) return;
         if (statusType != StatusType.NONE)
-            throw new Exception("Already has status, cannot create: " + message);
+            throw new Exception("Already has status: " + statusName + ", cannot create: " + message);
 
         statusName = message;
         statusType = StatusType.LINE;

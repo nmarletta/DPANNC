@@ -301,9 +301,10 @@ public class AIMNclean {
     }
 
     public static void main(String[] args) throws Exception {
+        int n = 100_000;
         double sensitivity = 1.0;
         double epsilon = 2.0;
-        double delta = 0.0001;
+        double delta = 1.0/n;
         double threshold = (2.0 / epsilon) * ln(1.0 + (Math.exp(epsilon / 2.0) - 1.0) / delta);
         System.out.println(threshold);
     }

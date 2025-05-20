@@ -33,6 +33,7 @@ public class AIMN {
     private List<String> query; // for returning result of a query
     private int queryCount; // for accumulating query counts
     private int queryNoisyCount; // for accumulating noisy query counts
+    int emptyBuckets;
 
     public AIMN(int n, int d, double s, double c, double sensitivity, double epsilon, double delta, DB db)
             throws SQLException {
@@ -112,16 +113,19 @@ public class AIMN {
     private void addNoise() throws Exception {
         Progress.newStatusBar("Adding noise to counts", counts.values().size());
         int i = 0;
+        emptyBuckets = 0;
         for (String node : counts.keySet()) {
             int rawCount = counts.get(node);
             int noisyCount = rawCount + (int) noise.TLap(sensitivity, epsilon / adjSen, delta / adjSen);
             if (noisyCount <= threshold) {
                 noisyCount = 0;
+                emptyBuckets++;
             }
             noisyCounts.put(node, noisyCount);
             i++;
             Progress.updateStatusBar(i);
         }
+        Progress.clearStatus();
         Progress.printAbove("Noise added to " + counts.values().size() + " counts");
     }
 
@@ -256,8 +260,20 @@ public class AIMN {
         DP = b;
     }
 
+    public int emptyBuckets() {
+        return emptyBuckets;
+    }
+
+    public int buckets() {
+        return counts.size();
+    }
+
     public int getCount() {
         return queryCount;
+    }
+
+    public double noiseThreshold() {
+        return threshold;
     }
 
     public int getNoisyCount() {

@@ -27,7 +27,7 @@ public class AccuracyExperiments {
 
     // increasing c without transformation
     public static void exp1() throws Exception {
-        String name = "accuracy1won";
+        String name = "accuracy1";
         DB db = new DB("DB/AIMN_" + name, true);
 
         int SEED = 100;
@@ -36,7 +36,7 @@ public class AccuracyExperiments {
         int n = 100_000;
         int d = 300;
         int dPrime = 300;
-        int reps = 10;
+        int reps = 1;
         double sensitivity = 1.0;
         double epsilon = 2.0;
         double delta = 0.0001;
@@ -69,13 +69,14 @@ public class AccuracyExperiments {
             NashDevice nd = new NashDevice(d, dPrime, new Random(SEED));
             db.applyTransformation(data -> {
                 Vector v = Vector.fromString(".", data);
-                // v = nd.transform(v);
-                v.normalize();
+                v = nd.transform(v);
+                // v.normalize();
                 return v.dataString();
             }, table1);
             Progress.updateBar(++pg);
 
             for (double c : cValues) {
+                stats.reset();
                 // initiate AIMN and populate
                 AIMN aimn = new AIMN(n, dPrime, 1, c, sensitivity, epsilon, delta, db);
                 Progress.printAbove(aimn.getSettingsString());
@@ -136,13 +137,14 @@ public class AccuracyExperiments {
         int n = 100_000;
         int d = 300;
         int dPrime = 300;
-        double c = 1.4;
-        int reps = 10;
+        double c = 1.2;
+        int reps = 1;
         double sensitivity = 1.0;
         double epsilon = 2.0;
         double delta = 0.0001;
-        double[] sValues = new double[] { 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3 };
-
+        // double[] sValues = new double[] { 0.95, 0.975, 1.0, 1.025, 1.05, 1.075, 1.1,
+        // 1.15, 1.2};
+        double[] sValues = new double[] { 1.075 };
         // progress bar
         Progress.newBar("Experiment " + name, 2 + sValues.length * (1 + reps * 2));
         int pg = 0;
@@ -174,6 +176,7 @@ public class AccuracyExperiments {
             Progress.updateBar(++pg);
 
             for (double s : sValues) {
+                stats.reset();
                 // double c = 1.227 / (s * 0.818);
                 // initiate AIMN and populate
                 AIMN aimn = new AIMN(n, dPrime, s, c, sensitivity, epsilon, delta, db);
@@ -211,6 +214,7 @@ public class AccuracyExperiments {
             writer.write("# SEED=" + SEED + "\n");
             writer.write("# n: " + n + "\n");
             writer.write("# d: " + d + "\n");
+            writer.write("# c: " + c + "\n");
             writer.write("# d': " + dPrime + "\n");
             writer.write("# reps=" + reps + "\n");
             writer.write("# brute force used nashed data\n");
@@ -233,7 +237,7 @@ public class AccuracyExperiments {
         // settings
         int d = 300;
         int dPrime = 300;
-        double c = 1.5;
+        double c = 1.2;
         double s = 1.0;
         int reps = 1;
         double sensitivity = 1.0;
@@ -259,6 +263,7 @@ public class AccuracyExperiments {
             writer.write("n, " + stats.statsHeader() + ", " + stats.prHeader() + "\n");
 
             for (int n : nValues) {
+                stats.reset();
                 int pgStep = n / 100_000;
 
                 // load vectors to DB
@@ -312,7 +317,7 @@ public class AccuracyExperiments {
                 }
 
                 // write result to file
-                writer.write(String.format(Locale.US, "%.2f,%s,%s\n",
+                writer.write(String.format(Locale.US, "%d,%s,%s\n",
                         n, stats.stats(), stats.pr()));
             }
             writer.write("# SEED=" + SEED + "\n");
@@ -365,6 +370,7 @@ public class AccuracyExperiments {
             writer.write("d', " + stats.statsHeader() + ", " + stats.prHeader() + "\n");
 
             for (int dPrime : dPrimeValues) {
+                stats.reset();
                 // load vectors to DB
                 String table1 = "vectors1";
                 db.loadVectorsIntoDB(table1, filepathSource, n, d);
@@ -436,7 +442,7 @@ public class AccuracyExperiments {
         // settings
         int n = 100_000;
         int d = 300;
-        double c = 1.5;
+        double c = 1.2;
         int k = 100;
         int reps = 1;
         double sensitivity = 1.0;
@@ -759,13 +765,16 @@ public class AccuracyExperiments {
         int n = 100_000;
         int d = 300;
         int dPrime = 300;
-        double c = 1.5;
+        double c = 1.2;
         int k = 100;
-        int reps = 1;
+        int reps = 10;
         double sensitivity = 1.0;
         double epsilon = 2.0;
         double delta = 0.0001;
-        double[] sValues = new double[] { 0.94, 0.945, 0.95, 0.955, 0.96, 0.965, 0.97, 0.975, 1.0 };
+        double[] sValues = new double[] { 0.9, 0.905, 0.91, 0.915, 0.92, 0.925, 0.93, 0.935, 0.94, 0.945, 0.95, 0.955,
+                0.96, 0.965, 0.97, 0.975, 1.0 };
+        // double[] sValues = new double[] { 0.9, 0.905, 0.91, 0.915, 0.92, 0.925, 0.93,
+        // 0.935, 0.94, 0.945, 0.95, 1.0 };
 
         // progress bar
         Progress.newBar("Experiment " + name, reps * (sValues.length * 6));
@@ -1266,8 +1275,6 @@ public class AccuracyExperiments {
             writer.write("# d: " + d + "\n");
             writer.write("# d': " + dPrime + "\n");
             writer.write("# reps=" + reps + "\n");
-            writer.write("# brute force used raw data\n");
-            writer.write("# aimn used nashed data\n");
             writer.write("# datafile: " + filepathSource + "\n");
         } catch (Exception e) {
             e.printStackTrace();
@@ -1393,16 +1400,16 @@ public class AccuracyExperiments {
         int n = 100_000;
         int d = 300;
         int dPrime = 300;
-        double c = 1.5;
         int k = 5000;
         int reps = 1;
 
+        double[] cValues = new double[] { 1.01, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5 };
         double sensitivity = 1.0;
         double epsilon = 2.0;
         double delta = 0.0001;
 
         // progress bar
-        Progress.newBar("Experiment " + name, reps * 6);
+        Progress.newBar("Experiment " + name, cValues.length * (reps * 6));
         int pg = 0;
 
         Path filepathSource = Paths.get("app/resources/fasttext/english_2M_300D_shuffled.txt").toAbsolutePath();
@@ -1411,65 +1418,67 @@ public class AccuracyExperiments {
             Stats stats = new Stats();
 
             // CSV header
-            writer.write(stats.statsHeader() + ", " + stats.prHeader() + "\n");
+            writer.write("c," + stats.statsHeader() + ", " + stats.prHeader() + "\n");
 
-            for (int i = 0; i < reps; i++) {
-                // load vectors to DB
-                String table1 = "vectors1";
-                db.loadVectorsIntoDB(table1, filepathSource, n, d);
-                Progress.updateBar(++pg);
-
+            for (double c : cValues) {
+                stats.reset();
                 Random random = new Random(SEED);
 
-                // find r for k-nearest neighbors and compute scaling factor
-                Vector q1 = db.getRandomVector(table1, random);
-                Result dists = new Result().loadDistancesBetween(q1, table1, db);
-                double initial_cr = dists.distanceToKNearest(k);
-                double target_cr = c * (1.0 / Math.pow((Math.log(n) / Math.log(10)), 1.0 / 8.0));
-                double scalingFactor = target_cr / initial_cr;
-                Progress.updateBar(++pg);
+                for (int i = 0; i < reps; i++) {
+                    // load vectors to DB
+                    String table1 = "vectors1";
+                    db.loadVectorsIntoDB(table1, filepathSource, n, d);
+                    Progress.updateBar(++pg);
 
-                // process vectors
-                NashDevice nd = new NashDevice(d, dPrime, new Random(SEED));
-                db.applyTransformation(data -> {
-                    Vector v = Vector.fromString(".", data);
-                    v.multiply(scalingFactor);
-                    v = nd.transform(v);
-                    return v.dataString();
-                }, table1);
-                Progress.updateBar(++pg);
 
-                double s = NashDevice.getDistortionFactor(d, dPrime, target_cr, 1.0, random);
+                    // find r for k-nearest neighbors and compute scaling factor
+                    Vector q1 = db.getRandomVector(table1, random);
+                    Result dists = new Result().loadDistancesBetween(q1, table1, db);
+                    double initial_cr = dists.distanceToKNearest(k);
+                    double target_cr = c * (1.0 / Math.pow((Math.log(n) / Math.log(10)), 1.0 / 8.0));
+                    double scalingFactor = target_cr / initial_cr;
+                    Progress.updateBar(++pg);
 
-                // update q to transformed version
-                Vector q2 = db.getVectorByLabel(q1.getLabel(), table1);
+                    // process vectors
+                    NashDevice nd = new NashDevice(d, dPrime, new Random(SEED));
+                    db.applyTransformation(data -> {
+                        Vector v = Vector.fromString(".", data);
+                        v.multiply(scalingFactor);
+                        v = nd.transform(v);
+                        return v.dataString();
+                    }, table1);
+                    Progress.updateBar(++pg);
 
-                // initiate AIMN and populate
-                AIMN aimn = new AIMN(n, dPrime, s, c, sensitivity, epsilon, delta, db);
-                Progress.printAbove(aimn.getSettingsString());
-                aimn.DP(false);
-                aimn.populateFromDB(table1);
-                double r = aimn.getR() * s;
-                Progress.updateBar(++pg);
+                    double s = NashDevice.getDistortionFactor(d, dPrime, target_cr, 1.0, new Random(SEED));
 
-                // results
-                aimn.queryFast(q2);
-                Set<String> queryList = new HashSet<>(aimn.queryList());
-                Progress.updateBar(++pg);
+                    // update q to transformed version
+                    Vector q2 = db.getVectorByLabel(q1.getLabel(), table1);
+                    // initiate AIMN and populate
+                    AIMN aimn = new AIMN(n, dPrime, s, c, sensitivity, epsilon, delta, db);
+                    Progress.printAbove(aimn.getSettingsString());
+                    aimn.DP(false);
+                    aimn.populateFromDB(table1);
+                    double r = aimn.getR() * s;
+                    Progress.updateBar(++pg);
 
-                // calculate distances
-                Result distances = new Result().loadDistancesBetween(q2, table1, db);
+                    // results
+                    aimn.queryFast(q2);
+                    Set<String> queryList = new HashSet<>(aimn.queryList());
+                    Progress.updateBar(++pg);
 
-                // write results
-                Progress.newStatus("writing results...");
-                stats.update(distances, queryList, r, c * r);
-                Progress.clearStatus();
-                Progress.updateBar(++pg);
+                    // calculate distances
+                    Result distances = new Result().loadDistancesBetween(q2, table1, db);
+
+                    // write results
+                    Progress.newStatus("writing results...");
+                    stats.update(distances, queryList, r, c * r);
+                    Progress.clearStatus();
+                    Progress.updateBar(++pg);
+                }
+                // write result to file
+                writer.write(String.format(Locale.US, "%.3f,%s,%s\n",
+                        c, stats.stats(), stats.pr()));
             }
-            // write result to file
-            writer.write(String.format(Locale.US, "%s,%s\n",
-                    stats.stats(), stats.pr()));
-
             writer.write("# SEED=" + SEED + "\n");
             writer.write("# n: " + n + "\n");
             writer.write("# d: " + d + "\n");
