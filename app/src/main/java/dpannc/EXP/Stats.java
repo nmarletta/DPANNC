@@ -69,16 +69,15 @@ class Stats {
     }
 
     String pr() {
-        double fuzzyCoverage = (missedFuzzy + includedFuzzy) == 0 ? 1.0 : includedFuzzy / (missedFuzzy + includedFuzzy);
-        double precision = (total + missedInner + missedFuzzy) == 0 ? 1.0
-                : (includedInner + includedFuzzy) / (total + missedInner);
+        double relevance = (total) == 0 ? 1.0 : includedInner / (total);
+        double precision = (total) == 0 ? 1.0 : (includedInner + includedFuzzy) / total;
         double recall = (missedInner + includedInner) == 0 ? 1.0 : includedInner / (missedInner + includedInner);
         return String.format(Locale.US, "%.3f, %.3f, %.3f",
-                fuzzyCoverage, precision, recall);
+                relevance, precision, recall);
     }
 
     String prHeader() {
-        return "fuzzycoverage, precision, recall";
+        return "relevance, precision, recall";
     }
 
 }

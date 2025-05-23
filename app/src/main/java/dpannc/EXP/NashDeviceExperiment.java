@@ -17,8 +17,7 @@ import dpannc.database.DB;
 public class NashDeviceExperiment {
 
     public static void main(String[] args) throws Exception {
-        exp16();
-        // exp2();
+        exp2();
         // exp3();
         // exp4();
         // exp5();
@@ -108,7 +107,7 @@ public class NashDeviceExperiment {
         int D = 300;
 
         double min = 0.1;
-        double max = 2;
+        double max = 2.4;
         double inc = 0.05;
 
         NashDevice nd = new NashDevice(d, D, random);
@@ -118,9 +117,9 @@ public class NashDeviceExperiment {
             // CSV header
             writer.write("initial distance / transformed distance\n"); // title
             writer.write("0\n"); // coulmns on x-axis
-            writer.write("1,2\n"); // columns on y-axis
+            writer.write("1,2,3\n"); // columns on y-axis
 
-            writer.write("initial distance, median transformed distance, 95th percentile\n"); // coulumns
+            writer.write("initial distance, 1st percentile, median, 99th percentile\n"); // coulumns
 
             for (double dist = min; dist < max; dist += inc) {
                 Result transformedDists = new Result();
@@ -139,8 +138,8 @@ public class NashDeviceExperiment {
                 }
 
                 // write result to file
-                writer.write(String.format(Locale.US, "%.2f,%.5f,%.5f\n",
-                        dist, transformedDists.median(), transformedDists.percentile(0.95)));
+                writer.write(String.format(Locale.US, "%.2f,%.5f,%.5f,%.5f\n",
+                        dist, transformedDists.percentile(0.01), transformedDists.median(), transformedDists.percentile(0.99)));
             }
             // metadata
             writer.write("# SEED=" + SEED + ", d=" + d + ", d'=" + D + ", repetitions=" + n + "\n");
@@ -180,7 +179,7 @@ public class NashDeviceExperiment {
             writer.write("0\n"); // coulmns on x-axis
             writer.write("1,2\n"); // columns on y-axis
 
-            writer.write("initial distance, median transformed distance, 95th percentile\n"); // coulumns
+            writer.write("initial distance, 1th percentile median transformed distance, 99th percentile\n"); // coulumns
 
             for (double dist = min; dist < max; dist += inc) {
                 Result transformedDists = new Result();
@@ -199,8 +198,8 @@ public class NashDeviceExperiment {
                 }
 
                 // write result to file
-                writer.write(String.format(Locale.US, "%.2f,%.5f,%.5f\n",
-                        dist, transformedDists.median(), transformedDists.percentile(0.95)));
+                writer.write(String.format(Locale.US, "%.2f,%.5f,%.5f,%.5f\n",
+                        dist, transformedDists.percentile(0.01), transformedDists.median(), transformedDists.percentile(0.99)));
             }
             // metadata
             writer.write("# SEED=" + SEED + ", d=" + d + ", d'=" + D + ", repetitions=" + n + "\n");
