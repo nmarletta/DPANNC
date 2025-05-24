@@ -90,7 +90,15 @@ public class AIMNclean {
             boolean accepted = false;
             List<Vector> gaussians = gaussiansAtLevel.get(level);
             for (int i = 0; i < T; i++) {
-                Vector g = gaussians.get(i);
+                Vector g;
+                // only generate gaussian when we need them
+                if (i == gaussians.size()) {
+                    g = new Vector(d).randomGaussian(random);
+                    gaussiansAtLevel.get(level).add(g);
+                } else {
+                    g = gaussians.get(i);
+                }
+
                 if (v.dot(g) >= etaU) {
                     path += ":" + i;
                     nodes.add(path);
@@ -233,12 +241,24 @@ public class AIMNclean {
         return remainderBucket.size();
     }
 
+    public int gaussians() {
+        int count = 0;
+        for (int l = 0; l < k; i++) {
+            count += gaussiansAtLevel.get(l).size();
+        }
+        return count;
+    }
+
     public int emptyBuckets() {
         return emptyBuckets;
     }
 
     public int buckets() {
         return counts.size();
+    }
+
+    public int nodes() {
+        return nodes.size();
     }
 
     public double noiseThreshold() {

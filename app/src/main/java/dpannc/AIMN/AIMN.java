@@ -54,13 +54,18 @@ public class AIMN {
         double F_etaU = 0.5 * Erf.erfc(etaU / Math.sqrt(2));
         T = (int) (10.0 * ln(K) / F_etaU);
 
-        gaussiansAtLevel = new HashMap<>();
         nodes = new HashSet<>();
         counts = new HashMap<>();
         noisyCounts = new HashMap<>();
         remainderBucket = new ArrayList<>();
         db.initTable(nodesTable);
-        generateGaussians();
+
+        gaussiansAtLevel = new HashMap<>();
+        for (int level = 0; level < k; level++) {
+            List<Vector> gaussians = new ArrayList<>();
+            gaussiansAtLevel.put(level, gaussians);
+        }
+        // generateGaussians();
     }
 
     public void populateFromDB(String table) throws Exception {
@@ -82,6 +87,34 @@ public class AIMN {
         }
     }
 
+    // private void insert(Vector v) throws SQLException {
+    //     int level = 0;
+    //     String path = "R"; // starting point, not stored in DB
+
+    //     while (level < k) {
+    //         boolean accepted = false;
+    //         List<Vector> gaussians = gaussiansAtLevel.get(level);
+    //         for (int i = 0; i < T; i++) {
+    //             Vector g = gaussians.get(i);
+    //             if (v.dot(g) >= etaU) {
+    //                 path += ":" + i;
+    //                 nodes.add(path);
+    //                 if (level == k - 1)
+    //                     counts.put(path, counts.getOrDefault(path, 0) + 1);
+    //                 level++;
+    //                 accepted = true;
+    //                 break;
+    //             }
+    //         }
+
+    //         if (!accepted) {
+    //             remainderBucket.add(v.getLabel());
+    //             return;
+    //         }
+    //     }
+    //     db.insertRow(v.getLabel(), path, nodesTable);
+    // }
+
     private void insert(Vector v) throws SQLException {
         int level = 0;
         String path = "R"; // starting point, not stored in DB
@@ -90,7 +123,15 @@ public class AIMN {
             boolean accepted = false;
             List<Vector> gaussians = gaussiansAtLevel.get(level);
             for (int i = 0; i < T; i++) {
-                Vector g = gaussians.get(i);
+                Vector g;
+                // only generate gaussian when we need them
+                if (i == gaussians.size()) {
+                    g = new Vector(d).randomGaussian(random);
+                    gaussiansAtLevel.get(level).add(g);
+                } else {
+                    g = gaussians.get(i);
+                }
+
                 if (v.dot(g) >= etaU) {
                     path += ":" + i;
                     nodes.add(path);
@@ -224,16 +265,6 @@ public class AIMN {
         return count;
     }
 
-    private void generateGaussians() {
-        for (int level = 0; level < k; level++) {
-            List<Vector> gaussians = new ArrayList<>();
-            for (int i = 0; i < T; i++) {
-                gaussians.add(new Vector(d).randomGaussian(random).setLabel("G:" + level + ":" + i));
-            }
-            gaussiansAtLevel.put(level, gaussians);
-        }
-    }
-
     public List<String> queryList() throws Exception {
         if (query.isEmpty())
             throw new Exception("query list is empty");
@@ -258,6 +289,14 @@ public class AIMN {
 
     public void DP(boolean b) {
         DP = b;
+    }
+
+    public int[] gaussians() {
+        int[] list = new int[k];
+        for (int l = 0; l < k; i++) {
+            list[l] = gaussiansAtLevel.get(l).size();
+        }
+        return list;
     }
 
     public int emptyBuckets() {

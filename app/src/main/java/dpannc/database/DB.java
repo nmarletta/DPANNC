@@ -63,12 +63,12 @@ public class DB {
                 String label = line.substring(0, line.indexOf(' '));
                 String data = line.substring(line.indexOf(' ') + 1);
                 String[] tokens = data.split(" ");
-                if (tokens.length != d) {
-                    throw new Exception("dimensions in data file does not match the specified d=" + d);
+                if (d > tokens.length) {
+                    throw new Exception("specified d=" + d + " is greater than dimensions in data file");
                 }
 
                 StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < tokens.length; i++) {
+                for (int i = 0; i < d; i++) {
                     double value = Double.parseDouble(tokens[i]);
                     sb.append(value);
                     if (i != tokens.length - 1)

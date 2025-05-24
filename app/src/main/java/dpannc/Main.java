@@ -31,13 +31,14 @@ public class Main {
                 case "accuracy2b" -> AccuracyExperiments.exp2b();
                 case "accuracy3" -> AccuracyExperiments.exp3();
                 case "accuracy4" -> AccuracyExperiments.exp4();
+                case "accuracy4a" -> AccuracyExperiments.exp4a();
                 case "accuracy5" -> AccuracyExperiments.exp5();
                 case "accuracy10" -> AccuracyExperiments.exp10();
                 case "accuracy11" -> AccuracyExperiments.exp11();
-                case "accuracy100" -> AccuracyExperiments.exp100();
-                case "time1" -> RunningtimeExperiments.exp1();
-                case "time2" -> RunningtimeExperiments.exp2();
-                case "time3" -> RunningtimeExperiments.exp3();
+                case "accuracy101" -> AccuracyExperiments.exp101();
+                case "time1" -> ComplexityExperiments.exp1();
+                case "time2" -> ComplexityExperiments.exp2();
+                case "time3" -> ComplexityExperiments.exp3();
                 case "dp1" -> DPExperiments.exp1();
                 case "dp2" -> DPExperiments.exp2();
                 default -> {
