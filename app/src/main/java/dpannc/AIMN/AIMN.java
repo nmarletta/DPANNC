@@ -293,7 +293,7 @@ public class AIMN {
 
     public int[] gaussians() {
         int[] list = new int[k];
-        for (int l = 0; l < k; i++) {
+        for (int l = 0; l < k; l++) {
             list[l] = gaussiansAtLevel.get(l).size();
         }
         return list;

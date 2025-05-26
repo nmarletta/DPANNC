@@ -243,7 +243,7 @@ public class AIMNclean {
 
     public int gaussians() {
         int count = 0;
-        for (int l = 0; l < k; i++) {
+        for (int l = 0; l < k; l++) {
             count += gaussiansAtLevel.get(l).size();
         }
         return count;

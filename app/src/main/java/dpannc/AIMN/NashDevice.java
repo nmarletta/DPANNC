@@ -21,6 +21,18 @@ public class NashDevice {
         }
     }
 
+    public NashDevice(int d, int dPrime) {
+        this.dPrime = dPrime;
+        this.sigma = 1.0;
+        this.randomGaussians = new ArrayList<>();
+        int SEED = 100;
+        // generate dPrime random Gaussian vectors in d-dimensional space
+        for (int i = 0; i < Math.ceil((0.0 + dPrime) / 2); i++) {
+            Random random = new Random(SEED + i * dPrime);
+            randomGaussians.add(new Vector(d).randomGaussian(random));
+        }
+    }
+
     public Vector transform(Vector x) {
         double[] transformedComponents = new double[dPrime];
 

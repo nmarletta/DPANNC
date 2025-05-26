@@ -40,7 +40,7 @@ public class ComplexityExperiments {
                 1_000_000 };
 
         // progress bar
-        Progress.newBar("Experiment " + name, 3 + nValues.length + nValues.length * (2 * reps));
+        Progress.newBar("Experiment " + name, nValues.length * (1 + 4 * reps));
         int pg = 0;
 
         Path filepathSource = Paths.get("app/resources/fasttext/english_2M_300D.txt").toAbsolutePath();
@@ -155,7 +155,7 @@ public class ComplexityExperiments {
                 750, 800, 850, 900, 950, 1000 };
 
         // progress bar
-        Progress.newBar("Experiment " + name, 3 + dPrimeValues.length + dPrimeValues.length * (2 * reps));
+        Progress.newBar("Experiment " + name, dPrimeValues.length * (1 + 4 * reps));
         int pg = 0;
 
         Path filepathSource = Paths.get("app/resources/fasttext/english_2M_300D.txt").toAbsolutePath();
@@ -232,7 +232,7 @@ public class ComplexityExperiments {
 
                 // write result to file
                 writer.write(String.format(Locale.US, "%d, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n",
-                        n, timeProcess, timeBuild, timeQuery1, timeQuery2, gaussians, leafs, nodes));
+                        dPrime, timeProcess, timeBuild, timeQuery1, timeQuery2, gaussians, leafs, nodes));
             }
 
             writer.write("# SEED=" + SEED + "\n");
@@ -267,10 +267,10 @@ public class ComplexityExperiments {
         double sensitivity = 1.0;
         double epsilon = 2.0;
         double delta = 0.0001;
-        int[] cValues = new int[] { 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0 };
+        double[] cValues = new double[] { 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0 };
 
         // progress bar
-        Progress.newBar("Experiment " + name, 3 + cValues.length + cValues.length * (2 * reps));
+        Progress.newBar("Experiment " + name, cValues.length * (1 + 4 * reps));
         int pg = 0;
 
         Path filepathSource = Paths.get("app/resources/fasttext/english_2M_300D.txt").toAbsolutePath();
@@ -283,7 +283,7 @@ public class ComplexityExperiments {
             writer.write("1,2,3,4,5,6,7\n"); // columns on y-axis
             writer.write("n, embedding, insertion, query, queryFast, gaussians, leafs, nodes \n");
 
-            for (int c : cValues) {
+            for (double c : cValues) {
                 // load vectors to DB
                 String table1 = "vectors1";
                 db.loadVectorsIntoDB(table1, filepathSource, n, d);
@@ -344,20 +344,17 @@ public class ComplexityExperiments {
                     leafs += aimn.buckets() / reps;
                     nodes += aimn.nodes() / reps;
                 }
-
+                
                 // write result to file
-                writer.write(String.format(Locale.US, "%d, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n",
-                        n, timeProcess, timeBuild, timeQuery1, timeQuery2, gaussians, leafs, nodes));
+                writer.write(String.format(Locale.US, "%.1f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n",
+                        c, timeProcess, timeBuild, timeQuery1, timeQuery2, gaussians, leafs, nodes));
             }
 
             writer.write("# SEED=" + SEED + "\n");
             writer.write("# n: " + n + "\n");
             writer.write("# d: " + d + "\n");
-            writer.write("# c: " + c + "\n");
             writer.write("# s: " + s + "\n");
             writer.write("# reps=" + reps + "\n");
-            writer.write("# brute force used nashed data\n");
-            writer.write("# aimn used nashed data\n");
             writer.write("# datafile: " + filepathSource + "\n");
 
         } catch (Exception e) {

@@ -35,10 +35,9 @@ public class Main {
                 case "accuracy5" -> AccuracyExperiments.exp5();
                 case "accuracy10" -> AccuracyExperiments.exp10();
                 case "accuracy11" -> AccuracyExperiments.exp11();
-                case "accuracy101" -> AccuracyExperiments.exp101();
-                case "time1" -> ComplexityExperiments.exp1();
-                case "time2" -> ComplexityExperiments.exp2();
-                case "time3" -> ComplexityExperiments.exp3();
+                case "complexity1" -> ComplexityExperiments.exp1();
+                case "complexity2" -> ComplexityExperiments.exp2();
+                case "complexity3" -> ComplexityExperiments.exp3();
                 case "dp1" -> DPExperiments.exp1();
                 case "dp2" -> DPExperiments.exp2();
                 default -> {
@@ -50,7 +49,7 @@ public class Main {
             String[] plotCommand = switch (experiment) {
                 case "aimn1", "aimn2", "aimn3" -> new String[] { "python3", "plot.py", "aimn", experiment };
                 case "nash1", "nash2", "nash3", "nash4", "nash5", "nash6", "nash7", "nash8", "nash9", "nash10" -> new String[] { "python3", "plot.py", "nash", experiment };
-                case "nash12" -> new String[] { "python3", "heat.py", "nash", experiment };
+                case "complexity1", "complexity2", "complexity3" -> new String[] { "python3", "plot.py", "complexity", experiment };
                 default -> null;
             };
             
