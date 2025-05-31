@@ -1,102 +1,130 @@
-// package dpannc.EXP;
+package dpannc.EXP;
 
-// import org.junit.jupiter.api.Test;
-// import java.util.*;
-// import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-// class StatsTest {
+import java.util.*;
 
-//     @Test
-//     void testUpdateWithPerfectMatch() {
-//         Stats stats = new Stats();
-//         Set<String> B = new HashSet<>(Arrays.asList("a", "b", "c"));
-//         Set<String> A = new HashSet<>(Arrays.asList("a", "b", "c"));
+import static org.junit.jupiter.api.Assertions.*;
 
-//         stats.update(B, A);
+public class StatsTest {
 
-//         assertEquals(3.0, stats.actual);
-//         assertEquals(3.0, stats.count);
-//         assertEquals(3.0, stats.TP);
-//         assertEquals(0.0, stats.FN);
-//         assertEquals(0.0, stats.FP);
-//         assertEquals(1.0, stats.precisionTotal);
-//         assertEquals(1.0, stats.recallTotal);
-//         assertEquals(1.0, stats.f1Total);
-//         assertEquals(1, stats.reps);
-//     }
+    private Stats stats;
+    private Result data;
 
-//     @Test
-//     void testUpdateWithNoOverlap() {
-//         Stats stats = new Stats();
-//         Set<String> B = new HashSet<>(Arrays.asList("a", "b", "c"));
-//         Set<String> A = new HashSet<>(Arrays.asList("x", "y", "z"));
+    @BeforeEach
+    public void setUp() {
+        stats = new Stats();
 
-//         stats.update(B, A);
+        data = new Result();
+        data.add("A", 1.0);
+        data.add("B", 2.0);
+        data.add("C", 3.0);
+        data.add("D", 4.0);
+        data.add("E", 5.0);
+    }
 
-//         assertEquals(3.0, stats.actual);
-//         assertEquals(3.0, stats.count);
-//         assertEquals(0.0, stats.TP);
-//         assertEquals(3.0, stats.FN);
-//         assertEquals(3.0, stats.FP);
-//         assertEquals(0.0, stats.precisionTotal);
-//         assertEquals(0.0, stats.recallTotal);
-//         assertEquals(0.0, stats.f1Total);
-//         assertEquals(1, stats.reps);
-//     }
+    @Test
+    public void testUpdate_AllCorrectlyCategorized() {
+        double r = 2.0;
+        double cr = 4.0;
 
-//     @Test
-//     void testUpdateWithPartialOverlap() {
-//         Stats stats = new Stats();
-//         Set<String> B = new HashSet<>(Arrays.asList("a", "b", "c"));
-//         Set<String> A = new HashSet<>(Arrays.asList("b", "c", "d"));
+        // Query contains: one inside r, two inside fuzzy zone, one outside
+        Set<String> query = new HashSet<>(Arrays.asList("A", "B", "C", "E"));
 
-//         stats.update(B, A);
+        stats.update(data, query, r, cr);
 
-//         assertEquals(3.0, stats.actual);
-//         assertEquals(3.0, stats.count);
-//         assertEquals(2.0, stats.TP);
-//         assertEquals(1.0, stats.FN);
-//         assertEquals(1.0, stats.FP);
-//         assertEquals(2.0 / 3.0, stats.precisionTotal);
-//         assertEquals(2.0 / 3.0, stats.recallTotal);
-//         assertEquals(2 * (2.0 / 3.0) * (2.0 / 3.0) / (4.0 / 3.0), stats.f1Total);
-//         assertEquals(1, stats.reps);
-//     }
+        // Explanation:
+        // lessThan(r): [A, B]  => includedInner=1, missedInner=0
+        // within(r, cr): [C, D] => includedFuzzy=2, missedFuzzy=0
+        // greaterThan(cr): [E] => includedOuter=1 (E), others not in query
+        assertEquals(0.0, stats.missedInner);
+        assertEquals(2.0, stats.includedInner);
+        assertEquals(1.0, stats.missedFuzzy);
+        assertEquals(1.0, stats.includedFuzzy);
+        assertEquals(1.0, stats.includedOuter);
+        assertEquals(4.0, stats.total);
+        assertEquals(1, stats.queries);
+    }
 
-//     @Test
-//     void testToCSV() {
-//         Stats stats = new Stats();
+    @Test
+    public void testUpdate_AllMissed() {
+        double r = 2.0;
+        double cr = 4.0;
 
-//         stats.update(Set.of("a", "b"), Set.of("b", "c")); // 1 TP, 1 FN, 1 FP
-//         stats.update(Set.of("x"), Set.of("x"));           // 1 TP, 0 FN, 0 FP
+        // Query contains no elements at all
+        Set<String> query = new HashSet<>();
 
-//         String csv = stats.toCSV();
-//         String[] values = csv.split(",");
+        stats.update(data, query, r, cr);
 
-//         assertEquals(8, values.length);
-//         assertDoesNotThrow(() -> Double.parseDouble(values[0])); // average actual
-//         assertDoesNotThrow(() -> Double.parseDouble(values[1])); // average count
-//         assertDoesNotThrow(() -> Double.parseDouble(values[2])); // avg TP
-//         assertDoesNotThrow(() -> Double.parseDouble(values[3])); // avg FN
-//         assertDoesNotThrow(() -> Double.parseDouble(values[4])); // avg FP
-//         assertDoesNotThrow(() -> Double.parseDouble(values[5])); // avg F1
-//         assertDoesNotThrow(() -> Double.parseDouble(values[6])); // avg precision
-//         assertDoesNotThrow(() -> Double.parseDouble(values[7])); // avg recall
-//     }
+        // lessThan(r): [A, B] => missedInner=1
+        // within(r, cr): [C, D] => missedFuzzy=2
+        // greaterThan(cr): [E] => includedOuter=0 (since query empty)
+        assertEquals(2.0, stats.missedInner);
+        assertEquals(0.0, stats.includedInner);
+        assertEquals(2.0, stats.missedFuzzy);
+        assertEquals(0.0, stats.includedFuzzy);
+        assertEquals(0.0, stats.includedOuter);
+        assertEquals(0.0, stats.total);
+        assertEquals(1, stats.queries);
+    }
 
-//     @Test
-//     void testEmptySets() {
-//         Stats stats = new Stats();
-//         stats.update(Collections.emptySet(), Collections.emptySet());
+    @Test
+    public void testUpdate_AllIncluded() {
+        double r = 2.0;
+        double cr = 4.0;
 
-//         assertEquals(0.0, stats.actual);
-//         assertEquals(0.0, stats.count);
-//         assertEquals(0.0, stats.TP);
-//         assertEquals(0.0, stats.FN);
-//         assertEquals(0.0, stats.FP);
-//         assertEquals(0.0, stats.precisionTotal);
-//         assertEquals(0.0, stats.recallTotal);
-//         assertEquals(0.0, stats.f1Total);
-//         assertEquals(1, stats.reps);
-//     }
-// }
+        // Query includes everything
+        Set<String> query = new HashSet<>(Arrays.asList("A", "B", "C", "D", "E"));
+
+        stats.update(data, query, r, cr);
+
+        assertEquals(0.0, stats.missedInner);
+        assertEquals(2.0, stats.includedInner);
+        assertEquals(0.0, stats.missedFuzzy);
+        assertEquals(2.0, stats.includedFuzzy);
+        assertEquals(1.0, stats.includedOuter);
+        assertEquals(5.0, stats.total);
+        assertEquals(1, stats.queries);
+    }
+
+    @Test
+    public void testReset() {
+        double r = 2.0;
+        double cr = 4.0;
+        Set<String> query = new HashSet<>(Arrays.asList("A", "B", "C"));
+
+        stats.update(data, query, r, cr);
+        stats.reset();
+
+        assertEquals(0.0, stats.missedInner);
+        assertEquals(0.0, stats.includedInner);
+        assertEquals(0.0, stats.missedFuzzy);
+        assertEquals(0.0, stats.includedFuzzy);
+        assertEquals(0.0, stats.includedOuter);
+        assertEquals(0.0, stats.total);
+        assertEquals(0, stats.queries);
+    }
+
+    @Test
+    public void testStatsString() {
+        double r = 2.0;
+        double cr = 4.0;
+        Set<String> query = new HashSet<>(Arrays.asList("A", "B", "C"));
+
+        stats.update(data, query, r, cr);
+        String statsStr = stats.stats();
+        assertNotNull(statsStr);
+    }
+
+    @Test
+    public void testPrString() {
+        double r = 2.0;
+        double cr = 4.0;
+        Set<String> query = new HashSet<>(Arrays.asList("A", "B", "C"));
+
+        stats.update(data, query, r, cr);
+        String prStr = stats.pr();
+        assertNotNull(prStr);
+    }
+}
