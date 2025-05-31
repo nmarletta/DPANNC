@@ -56,35 +56,6 @@ public class Result {
         return this;
     }
 
-    // public Result loadDotProductBetween(Vector q, Collection<String> vectors,
-    // String table, DB db) throws Exception {
-    // list = new ArrayList<Element>();
-    // for (String label : vectors) {
-    // Vector v = db.getVectorByLabel(label, table);
-    // if (q.getLabel().equals(v.getLabel()))
-    // continue;
-    // double dist = q.dot(v);
-    // Element el = new Element(label, dist);
-    // list.add(el);
-    // }
-    // return this;
-    // }
-
-    // public Result loadDotProductBetween(Vector q, String table, DB db) throws
-    // SQLException {
-    // list = new ArrayList<Element>();
-    // DBiterator it = db.iterator(table);
-    // while (it.hasNext()) {
-    // Vector v = it.next();
-    // if (q.getLabel().equals(v.getLabel()))
-    // continue;
-    // double dist = q.dot(v);
-    // Element el = new Element(v.getLabel(), dist);
-    // list.add(el);
-    // }
-    // return this;
-    // }
-
     public void add(String label, double val) {
         list.add(new Element(label, val));
     }
