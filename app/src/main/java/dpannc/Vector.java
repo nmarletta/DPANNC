@@ -246,9 +246,13 @@ public class Vector {
      *                                  dimension.
      */
     public double dot(Vector v) {
+        if (v == null) {
+            throw new IllegalArgumentException("Other vector is null.");
+        }
         if (this.dimensionality() != v.dimensionality()) {
             throw new IllegalArgumentException("Vectors must have the same dimension for dot product. Vectors: "
-                    + this.label + " and " + v.getLabel());
+                    + this.label + "(" + this.dimensionality() + ") and " + v.getLabel() + "(" + v.dimensionality()
+                    + ")");
         }
         double product = 0.0f;
         for (int c = 0; c < components.length; c++) {
@@ -347,7 +351,7 @@ public class Vector {
         // project r orthogonally to q
         double projectionScale = q.dot(r) / qNormSq;
         Vector projection = q.clone().multiply(projectionScale);
-        Vector rPerp = r.subtract(projection); //  rPerp ⋅ q == 0
+        Vector rPerp = r.subtract(projection); // rPerp ⋅ q == 0
         // final vector
         return base.add(rPerp);
     }

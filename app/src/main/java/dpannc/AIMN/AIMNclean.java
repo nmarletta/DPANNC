@@ -1,5 +1,7 @@
 package dpannc.AIMN;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -16,8 +18,8 @@ public class AIMNclean {
     private int n;
     private int d;
     private double sensitivity, epsilon, delta;
-    private int T, k;
-    private double c, lambda, r, K, alpha, beta, adjSen, threshold, etaU, etaQ;
+    private int T, K;
+    private double c, lambda, r, alpha, beta, adjSen, threshold, etaU, etaQ;
 
     private Random random = new Random(100);
     private Noise noise = new Noise(100);
@@ -43,8 +45,7 @@ public class AIMNclean {
         this.c = c;
         this.r = s * (1.0 / Math.pow(log(n, 10), 1.0 / 8.0));
         lambda = (2.0 * Math.sqrt(2.0 * c)) / (c * c + 1.0);
-        K = Math.sqrt(ln(n));
-        k = (int) K;
+        K = (int) Math.sqrt(ln(n));
         alpha = 1.0 - ((r * r) / 2.0); // cosine
         beta = Math.sqrt(1.0 - (alpha * alpha)); // sine
         adjSen = 2.0;
@@ -86,7 +87,7 @@ public class AIMNclean {
         int level = 0;
         String path = "R"; // starting point, not stored in DB
 
-        while (level < k) {
+        while (level < K) {
             boolean accepted = false;
             List<Vector> gaussians = gaussiansAtLevel.get(level);
             for (int i = 0; i < T; i++) {
@@ -102,7 +103,7 @@ public class AIMNclean {
                 if (v.dot(g) >= etaU) {
                     path += ":" + i;
                     nodes.add(path);
-                    if (level == k - 1)
+                    if (level == K - 1)
                         counts.put(path, counts.getOrDefault(path, 0) + 1);
                     level++;
                     accepted = true;
@@ -132,6 +133,7 @@ public class AIMNclean {
             i++;
             Progress.updateStatusBar(i);
         }
+        Progress.clearStatus();
     }
 
     public int query(Vector q) throws Exception {
@@ -151,7 +153,7 @@ public class AIMNclean {
     }
 
     private int query(Vector q, int level, String node) throws Exception {
-        if (level == k) {
+        if (level == K) {
             queryCount = counts.getOrDefault(node, 0);
             queryNoisyCount = noisyCounts.getOrDefault(node, 0);
             return queryCount; // getOrDefault should not be necessary
@@ -178,11 +180,12 @@ public class AIMNclean {
         if (q.get().length != d)
             throw new IllegalArgumentException("query dimensionality mismatch");
 
+        Progress.newStatus("Querying...");
         Progress.printAbove("Query vector: " + q.getLabel());
 
         // precompute which gaussians that accepts q at each level
         List<Set<Integer>> queryGaussians = new ArrayList<>();
-        for (int i = 0; i < k; i++) {
+        for (int i = 0; i < K; i++) {
             Set<Integer> accepted = new HashSet<>();
             List<Vector> gaussians = gaussiansAtLevel.get(i);
             for (int j = 0; j < gaussians.size(); j++) {
@@ -204,7 +207,7 @@ public class AIMNclean {
     }
 
     private int queryFast(String path, int level, List<Set<Integer>> queryGaussians) throws Exception {
-        if (level == k) {
+        if (level == K) {
             int leafCount = counts.getOrDefault(path, 0);
             queryCount += leafCount;
             queryNoisyCount += noisyCounts.getOrDefault(path, 0);
@@ -222,7 +225,7 @@ public class AIMNclean {
     }
 
     private void generateGaussians() {
-        for (int level = 0; level < k; level++) {
+        for (int level = 0; level < K; level++) {
             List<Vector> gaussians = new ArrayList<>();
             for (int i = 0; i < T; i++) {
                 gaussians.add(new Vector(d).randomGaussian(random).setLabel("G:" + level + ":" + i));
@@ -243,7 +246,7 @@ public class AIMNclean {
 
     public int gaussians() {
         int count = 0;
-        for (int l = 0; l < k; l++) {
+        for (int l = 0; l < K; l++) {
             count += gaussiansAtLevel.get(l).size();
         }
         return count;
@@ -324,7 +327,7 @@ public class AIMNclean {
         int n = 100_000;
         double sensitivity = 1.0;
         double epsilon = 2.0;
-        double delta = 1.0/n;
+        double delta = 1.0 / n;
         double threshold = (2.0 / epsilon) * ln(1.0 + (Math.exp(epsilon / 2.0) - 1.0) / delta);
         System.out.println(threshold);
     }
