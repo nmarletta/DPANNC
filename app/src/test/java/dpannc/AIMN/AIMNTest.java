@@ -41,27 +41,6 @@ class AIMNTest {
     }
 
     // @Test
-    // void testCartesianProductOutputFormat() {
-    //     List<Set<Integer>> sets = List.of(
-    //         Set.of(1, 2),
-    //         Set.of(3),
-    //         Set.of(4, 5)
-    //     );
-
-    //     List<String> result = AIMN.cartesianProduct(sets);
-
-    //     List<String> expected = List.of(
-    //         "R:1:3:4",
-    //         "R:1:3:5",
-    //         "R:2:3:4",
-    //         "R:2:3:5"
-    //     );
-
-    //     assertEquals(expected.size(), result.size());
-    //     assertTrue(result.containsAll(expected));
-    // }
-
-    // @Test
     // void testInsertAndQuery() throws Exception {
 
     //     Vector v1 = new Vector(new double[] {0.1, 0.2}).setLabel("v1");

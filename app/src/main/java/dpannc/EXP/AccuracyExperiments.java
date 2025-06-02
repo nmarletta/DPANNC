@@ -484,7 +484,7 @@ public class AccuracyExperiments {
         int[] dPrimeValues = new int[] { 5, 10, 15, 20, 25, 50, 100, 200, 300 };
 
         // progress bar
-        Progress.newBar("Experiment " + name, reps * (dPrimeValues.length * 6));
+        Progress.newBar("Experiment " + name, reps * (1 + dPrimeValues.length * 5));
         int pg = 0;
 
         Path filepathSource = Paths.get("app/resources/fasttext/english_2M_300D_shuffled.txt").toAbsolutePath();
@@ -578,7 +578,7 @@ public class AccuracyExperiments {
         int[] dPrimeValues = new int[] { 5, 10, 15, 20, 25, 50, 100, 200, 300 };
 
         // progress bar
-        Progress.newBar("Experiment " + name, reps * (dPrimeValues.length * 6));
+        Progress.newBar("Experiment " + name, reps * (1 + dPrimeValues.length * 5));
         int pg = 0;
 
         Path filepathSource = Paths.get("app/resources/fasttext/english_2M_300D_shuffled.txt").toAbsolutePath();
